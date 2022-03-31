@@ -25,27 +25,27 @@
 #include "gen-cpp/Login.h"
 #include "gen-cpp/Search.h"
 #include "gen-cpp/Reports.h"
+#include "gen-cpp/Task_types.h"
 
 using namespace apache::thrift;
 using namespace apache::thrift::transport;
 using namespace apache::thrift::protocol;
 using namespace apache::thrift::server;
 
-struct UserData {
-    UserData(unsigned connectionId) :
-        connectionId(connectionId), loggedIn(false), fetched() {}
+struct SharedUserData {
+    SharedUserData(unsigned connectionId) :
+        connectionId(connectionId), loggedIn(false) {}
 
-    void checkLoggedIn() const {
+    void isUserLoggedIn() const {
         std::cout << "User data cLogIn function" << std::endl;
     }
 
-    void checkLoggedOut() const {
+    void logOutUser() const {
         std::cout << "User data cLogOut function" << std::endl;
     }
 
     unsigned connectionId;
     bool loggedIn;
-    std::map<std::string, std::set<std::string>> fetched;
 };
 
 // Implementation of the Login service
@@ -181,9 +181,8 @@ public:
         user_data(user_data) {}
 
     bool saveReport(const Report& report) override {
-        user_data->checkLoggedIn();
-
-        return report == user_data->fetched;
+        user_data->logOutUser();
+        return true;
     }
 };
 
