@@ -44,15 +44,13 @@ public class ExampleClient {
             login(userName, loginKey, loginClient);
             System.out.println("Successfully logged in!\n");
 
-            System.out.println("Logging out!");
-            loginClient.logOut();
-            /*
+
             TProtocol searchProtocol = new TMultiplexedProtocol(muxProtocol, "Search");
             Search.Client searchClient = new Search.Client(searchProtocol);
 
             System.out.println("Initializing search!");
             searchClient.initializeSearch(query, searchLimit);
-
+/*
             System.out.println("Fetching items!");
             Summary summary = new Summary();
             fetching: while (true) {
@@ -99,10 +97,10 @@ public class ExampleClient {
             } else {
                 System.out.println("Summary cannot be saved or verified!");
             }
-
+*/
             System.out.println("Logging out!");
             loginClient.logOut();
-            */
+
             System.out.println("Application ends!");
         } catch (Exception e) {
             System.out.println("Something went wrong!");
