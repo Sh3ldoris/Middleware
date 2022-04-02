@@ -77,7 +77,7 @@ public:
     // Implementation of logOut
     void logOut() override {
         std::cout << "Logout function" << std::endl;
-        if (user_data->!isLoggedIn)
+        if (!user_data->isLoggedIn)
         {
             ProtocolException ex;
             ex.message= "Client is not logged in!";
@@ -99,7 +99,7 @@ public:
 
     void fetch(FetchResult& _return) override {
         std::cout << "Fetch function" << std::endl;
-        if (user_data->!isLoggedIn)
+        if (!user_data->isLoggedIn)
         {
             ProtocolException ex;
             ex.message= "Client is not logged in!";
