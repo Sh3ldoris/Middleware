@@ -56,7 +56,7 @@ public:
         if (user_data->isLoggedIn)
         {
             ProtocolException ex;
-            ex->message= "Client is already logged in!";
+            ex.message= "Client is already logged in!";
             throw ex;
         }
 
@@ -64,8 +64,8 @@ public:
         if (key != logKey)
         {
             InvalidKeyException invalidLoginEx;
-            invalidLoginEx->invalidKey = key;
-            invalidLoginEx->expectedKey = logKey;
+            invalidLoginEx.invalidKey = key;
+            invalidLoginEx.expectedKey = logKey;
 
             throw invalidLoginEx;
         } else {
@@ -80,7 +80,7 @@ public:
         if (user_data->!isLoggedIn)
         {
             ProtocolException ex;
-            ex->message= "Client is not logged in!";
+            ex.message= "Client is not logged in!";
             throw ex;
         } 
         
@@ -102,7 +102,7 @@ public:
         if (user_data->!isLoggedIn)
         {
             ProtocolException ex;
-            ex->message= "Client is not logged in!";
+            ex.message= "Client is not logged in!";
             throw ex;
         }
     }
