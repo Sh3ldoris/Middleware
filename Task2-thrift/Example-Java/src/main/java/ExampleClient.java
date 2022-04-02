@@ -99,6 +99,7 @@ public class ExampleClient {
 
             System.out.println("Logging out!");
             loginClient.logOut();
+            System.out.println("Application ends!");
         } catch (Exception e) {
             System.out.println("Something went wrong!");
             e.printStackTrace();
