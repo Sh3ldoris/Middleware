@@ -123,7 +123,6 @@ public:
         user_data(user_data) {}
 
     bool saveSummary(const Summary& summary) override {
-        user_data->logOutUser();
         return true;
     }
 };
