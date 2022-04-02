@@ -1,6 +1,9 @@
 // Interface for a client-server application
 // Do not modify, except when required by comments
 
+// You may change the namespace for a particular language
+// namespace * Task2 TODO: Ask for this
+
 // Thrown when an invalid key is used for login
 exception InvalidKeyException{
     // The invalid key that was used
@@ -9,101 +12,91 @@ exception InvalidKeyException{
     2: i32 expectedKey
 }
 
-// Thrown when the client calls remote methods with wrong arguments or in wrong order
+// Thrown when the client calls remote functions with wrong arguments or in wrong order
 exception ProtocolException{
     1: string message
 }
 // Service handling user identification
 service Login{
-    // Log
+    // Lets the user log in to be able to use other services
     // throws InvalidKeyError if the key is not correct
     // throws ProtocolException if already logged in
     void logIn(1: string userName, 2: i32 key) throws (1: InvalidKeyException invalidKeyException, 2: ProtocolException protocolException)
 
-    // throws ProtocolException if already logged in
     oneway void logOut();
 }
 
-// 3 types of items that the application works with
-struct ItemA{
-  1: required i16 fieldA
-  2: required list<i16> fieldB
-  3: required i32 fieldC
-}
-
-struct ItemB{
-  1: string fieldA
-  2: set<string> fieldB
-  3: optional list<string> fieldC
-}
-
-struct ItemC{
-  1: bool fieldA
-}
-
-// A type which can contain any of the item types
+// Union for holding just one of the item impls
 union Item{
   1: ItemA itemA
   2: ItemB itemB
   3: ItemC itemC
-  // TO-DONE: add another type of item
 }
 
-// State of fetching results of a search
-enum FetchState{
-    // The search is pending and may return more items later
+// One type of items that the application works with
+struct ItemA{
+  1: required string fieldX
+  2: required list<i16> fieldY
+  3: optional i32 fieldZ
+}
+
+struct ItemB{
+  1: required i16 fieldX
+  2: optional list<string> fieldY
+  3: required set<string> fieldZ
+}
+
+struct ItemC{
+  1: required bool fieldX
+}
+
+// Status of fetching items
+enum FetchStatus{
+    // The search is still running and may return more items later
     // Call fetchResult again after waiting for a while
     PENDING = 1
     // The item field of FetchResult contains an item
-    ITEMS = 2
+    ITEM = 2
     // All items were fetched
     ENDED = 3
 }
 
-// Represents a state of a search
-struct SearchState{
-    // Estimated number of items in the search result
-    1: i32 countEstimate
-    // Number of items fetched so far
-    2: i32 fetchedItems
-}
-
-// Result of a call to fetch
+// Result of an attempt to fetch an item
 struct FetchResult{
-    // Tells whether an item is fetched, the search is pending or all items were fetched
-    1: FetchState state
-    // If state is ITEMS, contains an item
-    2: optional Item item
-    // SearchState that should be passed to next call of fetch
-    3: SearchState nextSearchState
+    // Tells whether an item is fetched, the search is still running or all items were fetched
+    1: FetchStatus status
+    // If status is ITEM, contains an item
+    2: Item item
 }
-
-// Type of a report
-typedef map<string, set<string>> Report
 
 // Service handling item search
 service Search{
-    // Searches for items of a specified type.
-    // The result of a search is a list of items.
-    // Those items are not returned immediately, but can be fetched using fetchResult
-    // query is a comma-separated string specifies which kinds of items may be present in the result
-    // for example "ItemA,ItemB"
-    // limit is maximum number of items that can be searched for
-    // Throws ProtocolException if not logged in, or if query or limit is invalid
-    SearchState search(1: string query, 2: i32 limit = 100) throws (1: ProtocolException protocolException)
 
-    // Fetches a part of the search result.
-    // state is the result returned from search,
-    // TO-DONE: modify SearchState and FetchResult so that it can return multiple items at once
-    // Throws ProtocolException if no search was performed, or if the index does not match the number
-    FetchResult fetch(1: required SearchState state) throws (1: ProtocolException protocolException);
+    // Fetches a single item.
+    // Returns a result that can either contain an item,
+    // or indicate that the call must be repeated later to get the item,
+    // or indicate that no more items are available.
+    // By repeatedly calling this function, the client can fetch all items one-by-one.
+    // Throws ProtocolException if not logged in
+    FetchResult fetch() throws (1: ProtocolException protocolException);
+
+    // TODO: modify service Search and struct FetchResult so that
+    // 1) The client of the service can initiate a search, specifying which types of items to search for and limit
+    // 2) After initiating a search, the client can use the fetch function to fetch multiple items at the same time.
+    //    The client can fetch all items by repeatedly calling this function until it returns status ENDED.
+    // You may define new types (struct, unions, typedefs) for use by this service.
+    // You must maintain full run-time compatibility with the previous version of the interface.
+    void initializeSearch(1: string query, 2: i32 limit=10) throws (1: ProtocolException protocolException);
 }
 
-// Service for receiving a report
+// Type of a summary
+typedef map<string, set<string>> Summary
+
+// Service for receiving a summary
 service Reports{
-    // Sends the report to the server
+    // Sends the summary to the server
     // throws ProtocolException if not logged in, or no search was performed
-    // returns true if the contents of the report match the last search
+    // returns true if the contents of the summary match the last search
     // returns false otherwise
-    bool saveReport(1: Report report) throws (1: ProtocolException protocolException);
+    bool saveSummary(1: Summary summary) throws (1: ProtocolException protocolException);
 }
