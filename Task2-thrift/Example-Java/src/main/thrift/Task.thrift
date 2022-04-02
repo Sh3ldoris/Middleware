@@ -66,7 +66,7 @@ struct FetchResult{
     // Tells whether an item is fetched, the search is still running or all items were fetched
     1: FetchStatus status
     // If status is ITEM, contains an item
-    2: Item item
+    2: optional Item item
 }
 
 // Service handling item search
