@@ -50,8 +50,7 @@ struct SharedUserData {
 
 // Implementation of the Login service
 class LoginHandler: public LoginIf {
-    // Each connection gets assigned an id
-    // That allows us to see how for each connection, a new handler is used
+    // Each client will have his own shared_data
     std::shared_ptr<UserData> user_data;
 
 public:
@@ -70,117 +69,31 @@ public:
 };
 
 class SearchHandler : public SearchIf {
-    // Each connection gets assigned an id
-    // That allows us to see how for each connection, a new handler is used
+    // Each client will have his own shared_data
     std::shared_ptr<UserData> user_data;
-    std::map<std::string, std::function<Item()>> item_factory = {
-        { "itemA", [this]() {
-            Item item;
-
-            item.__isset.itemA = true;
-
-            {
-                auto s = std::to_string(item.itemA.fieldA = rand());
-                user_data->fetched.try_emplace("fieldA", std::set<std::string>()).first->second.emplace(s);
-            }
-            
-            {
-                std::size_t i = rand() & 0x7;
-                std::stringstream ss;
-                while (i--) {
-                    auto num = (short)rand();
-                    ss << num;
-                    if (i) ss << ',';
-                    item.itemA.fieldB.push_back(num);
-                }
-                user_data->fetched.try_emplace("fieldB", std::set<std::string>()).first->second.emplace(ss.str());
-            }
-            
-            {
-                auto s = std::to_string(item.itemA.fieldC = rand());
-                user_data->fetched.try_emplace("fieldC", std::set<std::string>()).first->second.emplace(s);
-            }
-            
-            return item;
-        }},
-        { "itemB", [this]() {
-            Item item;
-            item.__isset.itemB = true;
-            {
-                auto s = std::to_string(rand());
-                user_data->fetched.try_emplace("fieldA", std::set<std::string>()).first->second.emplace(s);
-                item.itemB.fieldA = s;
-            }
-            {
-                std::size_t i = rand() & 0x7;
-                while (i--) {
-                    auto s = std::to_string(rand());
-                    item.itemB.fieldB.emplace(s);
-                }
-                std::stringstream ss;
-                for (auto &&s : item.itemB.fieldB) {
-                    if (++i) ss << ',';
-                    ss << s;
-                }
-                user_data->fetched.try_emplace("fieldB", std::set<std::string>()).first->second.emplace(ss.str());
-            }
-            {
-                std::size_t i = rand() & 0x7;
-                std::stringstream ss;
-                if (i != 0)
-                    item.itemB.__isset.fieldC = true;
-                while (i--) {
-                    auto s = std::to_string(rand());
-                    ss << s;
-                    if (i) ss << ',';
-                    item.itemB.fieldC.push_back(s);
-                }
-                if (item.itemB.__isset.fieldC)
-                    user_data->fetched.try_emplace("fieldC", std::set<std::string>()).first->second.emplace(ss.str());
-            }
-            return item;
-        }},
-        { "itemC", [this]() {
-            Item item;
-            item.__isset.itemC = true;
-            auto s = std::to_string(item.itemC.fieldA = (rand() & 1) == 1);
-            user_data->fetched.try_emplace("fieldA", std::set<std::string>()).first->second.emplace(s);
-            return item;
-        }},
-    };
-
-    struct Fetcher {
-        Fetcher() = default;
-        Fetcher(std::size_t i, std::size_t j, std::uint32_t limit, const std::string &query) :
-            i(i), j(j), limit(limit), query(query) {}
-        std::size_t i = 0, j;
-        std::uint32_t limit;
-        std::string query;
-    };
-
-    std::unique_ptr<Fetcher> fetcher = nullptr;
 
 public:
     SearchHandler(std::shared_ptr<UserData> user_data) :
         user_data(std::move(user_data)) {}
 
-    void search(SearchState& _return, const std::string& query, const int32_t limit) override {
-        std::cout << "Search function" << std::endl;
+    void fetch(FetchResult& _return) override {
+        std::cout << "Fetch function" << std::endl;
     }
 
-    void fetch(FetchResult& _return, const SearchState& state) override {
-        std::cout << "Fetch function" << std::endl;
+    void search(const std::string& query, const int32_t limit) override {
+        std::cout << "Search function" << std::endl;
     }
 };
 
 class ReportsHandler : public ReportsIf {
+    // Each client will have his own shared_data
     std::shared_ptr<UserData> user_data;
 
 public:
     ReportsHandler(std::shared_ptr<UserData> user_data) :
         user_data(user_data) {}
 
-    bool saveReport(const Report& report) override {
+    bool saveReport(const Summary& summary) override {
         user_data->logOutUser();
         return true;
     }
