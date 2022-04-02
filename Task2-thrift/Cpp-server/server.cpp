@@ -80,7 +80,7 @@ public:
         std::cout << "Fetch function" << std::endl;
     }
 
-    void search(const std::string& query, const int32_t limit) override {
+    void initializeSearch(const std::string& query, const int32_t limit) override {
         std::cout << "Search function" << std::endl;
     }
 };
@@ -93,7 +93,7 @@ public:
     ReportsHandler(std::shared_ptr<SharedUserData> user_data) :
         user_data(user_data) {}
 
-    bool saveReport(const Summary& summary) override {
+    bool saveSummary(const Summary& summary) override {
         user_data->logOutUser();
         return true;
     }
