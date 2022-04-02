@@ -26,13 +26,6 @@ service Login{
     oneway void logOut();
 }
 
-// Union for holding just one of the item impls
-union Item{
-  1: ItemA itemA
-  2: ItemB itemB
-  3: ItemC itemC
-}
-
 // One type of items that the application works with
 struct ItemA{
   1: required string fieldX
@@ -48,6 +41,13 @@ struct ItemB{
 
 struct ItemC{
   1: required bool fieldX
+}
+
+// Union for holding just one of the item impls
+union Item{
+  1: ItemA itemA
+  2: ItemB itemB
+  3: ItemC itemC
 }
 
 // Status of fetching items
