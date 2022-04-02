@@ -26,6 +26,7 @@ service Login{
     oneway void logOut();
 }
 
+// Union for holding just one of the item impls
 union Item{
   1: ItemA itemA
   2: ItemB itemB
@@ -49,8 +50,6 @@ struct ItemC{
   1: required bool fieldX
 }
 
-// TODO: add other types of items
-
 // Status of fetching items
 enum FetchStatus{
     // The search is still running and may return more items later
@@ -70,11 +69,6 @@ struct FetchResult{
     2: Item item
 }
 
-struct SearchStatus{
-    //Number of items that can be fetched so far
-    1:i32 itemCount
-}
-
 // Service handling item search
 service Search{
 
@@ -92,7 +86,7 @@ service Search{
     //    The client can fetch all items by repeatedly calling this function until it returns status ENDED.
     // You may define new types (struct, unions, typedefs) for use by this service.
     // You must maintain full run-time compatibility with the previous version of the interface.
-    SearchStatus initializeSearch(1: string query, 2: i32 limit=10) throws (1: ProtocolException protocolException);
+    void initializeSearch(1: string query, 2: i32 limit=10) throws (1: ProtocolException protocolException);
 }
 
 // Type of a summary
