@@ -34,7 +34,7 @@ using namespace apache::thrift::server;
 
 struct SharedUserData {
     SharedUserData(unsigned connectionId) :
-        connectionId(connectionId), loggedIn(false) {}
+        connectionId(connectionId), isLoggedIn(false) {}
 
     void isUserLoggedIn() const {
         std::cout << "User data cLogIn function" << std::endl;
