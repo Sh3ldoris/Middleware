@@ -92,7 +92,7 @@ public:
 class SearchHandler : public SearchIf {
     // Each client will have his own shared_data
     std::shared_ptr<SharedUserData> user_data;
-    std::string query;
+    std::string storedQuery;
 
 public:
     SearchHandler(std::shared_ptr<SharedUserData> user_data) :
@@ -107,14 +107,14 @@ public:
             throw ex;
         }
 
-        std::cout << "Query is -> " << query << std::endl;
+        std::cout << "Query is -> " << storedQuery << std::endl;
     }
 
     // Client can initialize search without logging in!
     // After initializing search the query and the search limit will be stored in the server
     void initializeSearch(const std::string& query, const int32_t limit) override {
         std::cout << "Search function" << std::endl;
-        std::memcpy(query, query, query->length());
+        storedQuery=query;
     }
 };
 
