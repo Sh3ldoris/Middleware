@@ -45,7 +45,7 @@ struct SharedUserData {
     }
 
     unsigned connectionId;
-    bool loggedIn;
+    bool isLoggedIn;
 };
 
 // Implementation of the Login service
@@ -60,6 +60,7 @@ public:
     // Implementation of logIn
     void logIn(const std::string& userName, const std::int32_t key) override {
         std::cout << "Login function" << std::endl;
+        user_data->isLoggedIn = true;
     }
 
     // Implementation of logOut
@@ -82,6 +83,8 @@ public:
 
     void initializeSearch(const std::string& query, const int32_t limit) override {
         std::cout << "Search function" << std::endl;
+        std::cout << "User status: " << user_data->isLoggedIn << std::endl;
+        std::cout << "Query is: " << query << std::endl;
     }
 };
 
