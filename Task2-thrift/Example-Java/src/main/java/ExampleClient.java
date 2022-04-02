@@ -16,7 +16,7 @@ public class ExampleClient {
     private static String userName = "";
     private static String query = "";
     private static int loginKey = 0;
-    private static int searchLimit = 10;
+    private static int searchLimit = 5;
 
     public static void main(String args[]) {
         if (args.length == 2) {
@@ -42,8 +42,11 @@ public class ExampleClient {
 
             System.out.println("Trying to login!");
             login(userName, loginKey, loginClient);
-            System.out.println("Successfully logged in!");
+            System.out.println("Successfully logged in!\n");
 
+            System.out.println("Logging out!");
+            loginClient.logOut();
+            /*
             TProtocol searchProtocol = new TMultiplexedProtocol(muxProtocol, "Search");
             Search.Client searchClient = new Search.Client(searchProtocol);
 
@@ -99,6 +102,7 @@ public class ExampleClient {
 
             System.out.println("Logging out!");
             loginClient.logOut();
+            */
             System.out.println("Application ends!");
         } catch (Exception e) {
             System.out.println("Something went wrong!");
@@ -182,6 +186,7 @@ public class ExampleClient {
                 client.logIn(name, key);
                 break;
             } catch (InvalidKeyException e) {
+                System.out.println("Expected login key -> " + e.expectedKey);
                 key = e.expectedKey;
             }
         }
