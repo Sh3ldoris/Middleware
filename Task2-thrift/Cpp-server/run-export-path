@@ -3,5 +3,5 @@
 thrift_dir_path=$HOME/thrift
 
 
-export PATH=$thrift_dir_path/bin/
+export PATH=$PATH:$thrift_dir_path/bin/
 export LD_LIBRARY_PATH=$thrift_dir_path/lib/
