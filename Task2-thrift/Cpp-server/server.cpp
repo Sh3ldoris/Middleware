@@ -36,14 +36,6 @@ struct SharedUserData {
     SharedUserData(unsigned connectionId) :
         connectionId(connectionId), isLoggedIn(false) {}
 
-    void isUserLoggedIn() const {
-        std::cout << "User data cLogIn function" << std::endl;
-    }
-
-    void logOutUser() const {
-        std::cout << "User data cLogOut function" << std::endl;
-    }
-
     unsigned connectionId;
     bool isLoggedIn;
 };
@@ -60,12 +52,40 @@ public:
     // Implementation of logIn
     void logIn(const std::string& userName, const std::int32_t key) override {
         std::cout << "Login function" << std::endl;
-        user_data->isLoggedIn = true;
+        std::int32_t logKey = std::hash<std::string>{}(userName);
+        if (user_data->isLoggedIn)
+        {
+            ProtocolException ex;
+            ex->message= "Client is already logged in!";
+            throw ex;
+        }
+
+        // Check for log key from the client (if does not match send it in InvalidKeyException)
+        if (key != logKey)
+        {
+            InvalidKeyException invalidLoginEx;
+            invalidLoginEx->invalidKey = key;
+            invalidLoginEx->expectedKey = logKey;
+
+            throw invalidLoginEx;
+        } else {
+            user_data->isLoggedIn = true;
+        }
+        
     }
 
     // Implementation of logOut
     void logOut() override {
         std::cout << "Logout function" << std::endl;
+        if (user_data->!isLoggedIn)
+        {
+            ProtocolException ex;
+            ex->message= "Client is not logged in!";
+            throw ex;
+        } 
+        
+        // If the client is logged in it will be logged out by setting shared var isLoggedIn to false;
+        user_data->isLoggedIn = false;
     }
 };
 
@@ -79,6 +99,12 @@ public:
 
     void fetch(FetchResult& _return) override {
         std::cout << "Fetch function" << std::endl;
+        if (user_data->!isLoggedIn)
+        {
+            ProtocolException ex;
+            ex->message= "Client is not logged in!";
+            throw ex;
+        }
     }
 
     void initializeSearch(const std::string& query, const int32_t limit) override {
