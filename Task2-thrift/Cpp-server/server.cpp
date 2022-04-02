@@ -51,10 +51,10 @@ struct SharedUserData {
 // Implementation of the Login service
 class LoginHandler: public LoginIf {
     // Each client will have his own shared_data
-    std::shared_ptr<UserData> user_data;
+    std::shared_ptr<SharedUserData> user_data;
 
 public:
-    LoginHandler(std::shared_ptr<UserData> user_data) :
+    LoginHandler(std::shared_ptr<SharedUserData> user_data) :
         user_data(std::move(user_data)) {}
 
     // Implementation of logIn
@@ -70,10 +70,10 @@ public:
 
 class SearchHandler : public SearchIf {
     // Each client will have his own shared_data
-    std::shared_ptr<UserData> user_data;
+    std::shared_ptr<SharedUserData> user_data;
 
 public:
-    SearchHandler(std::shared_ptr<UserData> user_data) :
+    SearchHandler(std::shared_ptr<SharedUserData> user_data) :
         user_data(std::move(user_data)) {}
 
     void fetch(FetchResult& _return) override {
@@ -87,10 +87,10 @@ public:
 
 class ReportsHandler : public ReportsIf {
     // Each client will have his own shared_data
-    std::shared_ptr<UserData> user_data;
+    std::shared_ptr<SharedUserData> user_data;
 
 public:
-    ReportsHandler(std::shared_ptr<UserData> user_data) :
+    ReportsHandler(std::shared_ptr<SharedUserData> user_data) :
         user_data(user_data) {}
 
     bool saveReport(const Summary& summary) override {
@@ -116,7 +116,7 @@ public:
     // This metod is called for each connection
     virtual std::shared_ptr<TProcessor> getProcessor(const TConnectionInfo& connInfo) override {
         // Assign a new id to this connection
-        auto user_data = std::make_shared<UserData>(assignId());
+        auto user_data = std::make_shared<SharedUserData>(assignId());
 
         // Create Login handler and processor
         shared_ptr<LoginHandler> loginHandler = std::make_shared<LoginHandler>(user_data);
