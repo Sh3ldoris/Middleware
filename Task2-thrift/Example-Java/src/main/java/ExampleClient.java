@@ -28,7 +28,7 @@ public class ExampleClient {
         }
 
         // Connect to server by TCP socket
-        try (TTransport transport = new TSocket("localhost", 5000)) {
+        try (TTransport transport = new TSocket("localhost", 5001)) {
             // The socket transport is already buffered
             // Use a binary protocol to serialize data
             TProtocol muxProtocol = new TBinaryProtocol(transport);
@@ -49,7 +49,17 @@ public class ExampleClient {
             Search.Client searchClient = new Search.Client(searchProtocol);
 
             System.out.println("Initializing search!");
-            searchClient.initializeSearch(query, searchLimit);
+            searchClient.initializeSearch("ITEMB", 5);
+
+            FetchResult result = searchClient.fetch();
+            System.out.println(result.status + ", ItemB: " + result.item.isSetItemB());
+            if (result.item.isSetItemB()) {
+                System.out.println(
+                        "FieldX: " + result.item.getItemB().fieldX
+                        + ", fieldY size: " + result.item.getItemB().fieldY
+                        + ", fieldZ size: " + result.item.getItemB().fieldZ.size()
+                );
+            }
 /*
             System.out.println("Fetching items!");
             Summary summary = new Summary();
@@ -184,7 +194,6 @@ public class ExampleClient {
                 client.logIn(name, key);
                 break;
             } catch (InvalidKeyException e) {
-                System.out.println("Expected login key -> " + e.expectedKey);
                 key = e.expectedKey;
             }
         }
