@@ -126,6 +126,13 @@ public:
             return;
         }
 
+        if (rand() % 10 == 1)
+        {
+            _return.status = FetchStatus::PENDING;
+            return;
+        }
+        
+
         Item item;
 
         int index = rand() % initializedItems.size();
@@ -134,19 +141,42 @@ public:
         if (randomItemId.compare("ITEMC") == 0)
         {
             item.__isset.itemC = true;
-            item.itemC.fieldX = true;
+            item.itemC.fieldX = (rand() & 1) == 0;
         } else if (randomItemId.compare("ITEMA") == 0) {
             item.__isset.itemA = true;
-            item.itemA.fieldX = "No joo";
-            item.itemA.fieldY.push_back(6);
-            item.itemA.fieldZ = 99;
+            item.itemA.fieldX = genRandomString();
+
+            int size = rand() % 8;
+            for (int i = 0; i < size; i++)
+            {
+                item.itemA.fieldY.push_back((short)rand());
+            }
+
+            if ((rand() % 5) == 1)
+            {
+                item.itemA.__isset.fieldZ = true;
+                item.itemA.fieldZ = rand();
+            }
+            
         } else if (randomItemId.compare("ITEMB") == 0) {
             item.__isset.itemB = true;
-            item.itemB.fieldX = 99;
-            std::string rs = "Random string";
-            item.itemB.__isset.fieldY = true;
-            item.itemB.fieldY.push_back(rs);
-            item.itemB.fieldZ.insert(rs);
+            item.itemB.fieldX = (short)rand();
+
+            if ((rand() % 5) == 1)
+            {
+                item.itemB.__isset.fieldY = true;
+                int size = rand() % 8;
+                for (int i = 0; i < size; i++)
+                {
+                    item.itemB.fieldY.push_back(genRandomString());
+                }
+            }
+            
+            int size = rand() % 8;
+            for (int i = 0; i < size; i++)
+            {
+                item.itemB.fieldZ.insert(genRandomString());
+            }
         }
             
         initilizedLimit--;
@@ -181,6 +211,13 @@ public:
             }
         }
         initializedItems.push_back(itemId);
+    }
+
+private:
+    std::string genRandomString() {
+        std::string alphabet = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
+        random_shuffle(alphabet.begin(), alphabet.end());
+        return alphabet.substr(0, (rand() & 8) + 1);
     }
 };
 

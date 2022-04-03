@@ -49,16 +49,33 @@ public class ExampleClient {
             Search.Client searchClient = new Search.Client(searchProtocol);
 
             System.out.println("Initializing search!");
+
+            try {
+                searchClient.initializeSearch("", 5);
+            } catch (ProtocolException ex) {
+                System.out.println("Empty query ex -> " + ex.message);
+            }
+
+            try {
+                searchClient.initializeSearch("ITEMB", 0);
+            } catch (ProtocolException ex) {
+                System.out.println("Zero limit ex -> " + ex.message);
+            }
+
             searchClient.initializeSearch("ITEMB", 5);
 
             FetchResult result = searchClient.fetch();
-            System.out.println(result.status + ", ItemB: " + result.item.isSetItemB());
-            if (result.item.isSetItemB()) {
-                System.out.println(
-                        "FieldX: " + result.item.getItemB().fieldX
-                        + ", fieldY size: " + result.item.getItemB().fieldY
-                        + ", fieldZ size: " + result.item.getItemB().fieldZ.size()
-                );
+            if (result.status.equals(FetchStatus.PENDING)) {
+                System.out.println("Pending!");
+            } else {
+                System.out.println(result.status + ", ItemB: " + result.item.isSetItemB());
+                if (result.item.isSetItemB()) {
+                    System.out.println(
+                            "FieldX: " + result.item.getItemB().fieldX
+                                    + ", fieldY size: " + result.item.getItemB().fieldY
+                                    + ", fieldZ size: " + result.item.getItemB().fieldZ.size()
+                    );
+                }
             }
 /*
             System.out.println("Fetching items!");
