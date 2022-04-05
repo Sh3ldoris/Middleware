@@ -1,4 +1,4 @@
-// import Task2.*;
+import Task2.*;
 import org.apache.thrift.TException;
 import org.apache.thrift.protocol.TBinaryProtocol;
 import org.apache.thrift.protocol.TMultiplexedProtocol;
@@ -6,10 +6,7 @@ import org.apache.thrift.protocol.TProtocol;
 import org.apache.thrift.transport.TSocket;
 import org.apache.thrift.transport.TTransport;
 
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 public class ExampleClient {
 
@@ -48,41 +45,17 @@ public class ExampleClient {
             TProtocol searchProtocol = new TMultiplexedProtocol(muxProtocol, "Search");
             Search.Client searchClient = new Search.Client(searchProtocol);
 
-            System.out.println("Initializing search!");
+            System.out.println("Initializing search!\n");
 
-            try {
-                searchClient.initializeSearch("", 5);
-            } catch (ProtocolException ex) {
-                System.out.println("Empty query ex -> " + ex.message);
-            }
+            // Init the search with the query and limit
+            searchClient.initializeSearch("ITEMB;ITEMA;ITEMC", 10);
 
-            try {
-                searchClient.initializeSearch("ITEMB", 0);
-            } catch (ProtocolException ex) {
-                System.out.println("Zero limit ex -> " + ex.message);
-            }
-
-            searchClient.initializeSearch("ITEMB", 5);
-
-            FetchResult result = searchClient.fetch();
-            if (result.status.equals(FetchStatus.PENDING)) {
-                System.out.println("Pending!");
-            } else {
-                System.out.println(result.status + ", ItemB: " + result.item.isSetItemB());
-                if (result.item.isSetItemB()) {
-                    System.out.println(
-                            "FieldX: " + result.item.getItemB().fieldX
-                                    + ", fieldY size: " + result.item.getItemB().fieldY
-                                    + ", fieldZ size: " + result.item.getItemB().fieldZ.size()
-                    );
-                }
-            }
-/*
-            System.out.println("Fetching items!");
+            System.out.println("Fetching items!\n");
             Summary summary = new Summary();
+
+            // Fetch the items from the server and save them
             fetching: while (true) {
                 FetchResult result = searchClient.fetch();
-
                 switch (result.status)
                 {
                     case ENDED:
@@ -96,15 +69,30 @@ public class ExampleClient {
 
                     case ITEM:
                         Item item = result.getItem();
-                        if (item.isSetItemA()) {
-                            System.out.println("ItemA fetched.");
-                            processItemA(item.getItemA(), summary);
-                        } else if (item.isSetItemB()) {
-                            System.out.println("ItemB fetched.");
+                        if (item.isSetItemB()) {
                             processItemB(item.getItemB(), summary);
-                        } else if (item.isSetItemC()) {
-                            System.out.println("ItemC fetched.");
+                            System.out.println("ItemB");
+                            System.out.println(
+                                    "FieldX: " + item.getItemB().fieldX
+                                            + ", fieldY: " + item.getItemB().fieldY
+                                            + ", fieldZ: " + item.getItemB().fieldZ
+                            );
+                        }
+
+                        if (item.isSetItemA()) {
+                            processItemA(item.getItemA(), summary);
+                            System.out.println("ItemA");
+                            System.out.println(
+                                    "FieldX: " + item.getItemA().fieldX
+                                            + ", fieldY: " + item.getItemA().fieldY
+                                            + ", fieldZ: " + item.getItemA().fieldZ
+                            );
+                        }
+
+                        if (item.isSetItemC()) {
                             processItemC(item.getItemC(), summary);
+                            System.out.println("ItemC");
+                            System.out.println("FieldX: " + item.getItemC().fieldX);
                         }
                         break;
 
@@ -117,15 +105,14 @@ public class ExampleClient {
             TProtocol reportsProtocol = new TMultiplexedProtocol(muxProtocol, "Reports");
             Reports.Client reportsClient = new Reports.Client(reportsProtocol);
 
-            System.out.println("Saving and verifying summary!");
+            System.out.println("\nSaving and verifying summary!");
 
             if (reportsClient.saveSummary(summary.itemsfields)) {
-                System.out.println("Summary saved and verified successfully!");
+                System.out.println("Summary saved and verified successfully!\n");
             } else {
-                System.out.println("Summary cannot be saved or verified!");
+                System.out.println("Summary cannot be saved or verified!\n");
             }
-*/
-            System.out.println("Logging out!");
+            System.out.println("Logging out!\n");
             loginClient.logOut();
 
             System.out.println("Application ends!");
@@ -136,17 +123,17 @@ public class ExampleClient {
     }
 
     private static class Summary {
-        private Map<String, Set<String>> itemsfields = new HashMap<>();
+        private Map<String, Set<String>> itemsfields =  new TreeMap<>();
 
         public void addField(String fieldName, String fieldValue) {
             if (itemsfields.containsKey(fieldName))
                 itemsfields.get(fieldName).add(fieldValue);
             else {
-                Set<String> newSet = new HashSet<>();
+                Set<String> newSet = new TreeSet<>();
                 newSet.add(fieldValue);
                 itemsfields.put(fieldName, newSet);
             }
-        };
+        }
     }
 
     private static void processItemA(ItemA item, Summary summary) {
@@ -155,14 +142,7 @@ public class ExampleClient {
         }
 
         if (item.isSetFieldY()) {
-            StringBuilder sBuilder = new StringBuilder();
-            for (int i = 0; i < item.getFieldYSize(); i++) {
-                if (i != 0) {
-                    sBuilder.append(',');
-                }
-                sBuilder.append(item.getFieldY().get(i));
-            }
-            summary.addField("fieldY", sBuilder.toString());
+            summary.addField("fieldY", processList(item.getFieldY()));
         }
 
         if (item.isSetFieldZ()) {
@@ -176,33 +156,42 @@ public class ExampleClient {
         }
 
         if (item.isSetFieldY()) {
-            StringBuilder sBuilder = new StringBuilder();
-            for (int i = 0; i < item.getFieldYSize(); i++) {
-                if (i != 0) {
-                    sBuilder.append(',');
-                }
-                sBuilder.append(String.valueOf(item.getFieldY().get(i)));
-            }
-            summary.addField("fieldY", sBuilder.toString());
+            summary.addField("fieldY", processList(item.getFieldY()));
         }
 
         if (item.isSetFieldZ()) {
-            StringBuilder sBuilder = new StringBuilder();
-            int i = 0;
-            for (String value : item.getFieldZ()) {
-                if (i++ != 0) {
-                    sBuilder.append(',');
-                }
-                sBuilder.append(value);
-            }
-            summary.addField("fieldZ", sBuilder.toString());
+            summary.addField("fieldZ", processSet(item.getFieldZ()));
         }
     }
 
     private static void processItemC(ItemC item, Summary summary) {
         if (item.isSetFieldX()) {
-            summary.addField("fieldX", String.valueOf(item.isFieldX() ? "true" : "false"));
+            summary.addField("fieldX", item.isFieldX() ? "true" : "false");
         }
+    }
+
+    private static <T extends Comparable<T>> String processSet(Set<T> set) {
+        StringBuilder sBuilder = new StringBuilder();
+        int i = 0;
+        Set<T> orderedSet = new TreeSet<>(set);
+        for (T value : orderedSet) {
+            if (i++ != 0) {
+                sBuilder.append(',');
+            }
+            sBuilder.append(value);
+        }
+        return sBuilder.toString();
+    }
+
+    private static <T extends Comparable<T>> String processList(List<T> list) {
+        StringBuilder sBuilder = new StringBuilder();
+        for (int i = 0; i < list.size(); i++) {
+            if (i != 0) {
+                sBuilder.append(',');
+            }
+            sBuilder.append(list.get(i));
+        }
+        return sBuilder.toString();
     }
 
     private static void login(String name, int key, Login.Client client) throws TException {

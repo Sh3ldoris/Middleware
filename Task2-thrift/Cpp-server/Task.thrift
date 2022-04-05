@@ -2,7 +2,7 @@
 // Do not modify, except when required by comments
 
 // You may change the namespace for a particular language
-// namespace * Task2 TODO: Ask for this
+ namespace * Task2
 
 // Thrown when an invalid key is used for login
 exception InvalidKeyException{

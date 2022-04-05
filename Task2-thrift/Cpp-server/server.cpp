@@ -1,4 +1,3 @@
-// Standard library headers
 #include <memory>
 #include <functional>
 #include <iostream>
@@ -10,7 +9,6 @@
 #include <set>
 #include <bits/stdc++.h>
 
-// Thrift headers
 #include <thrift/protocol/TProtocol.h>
 #include <thrift/protocol/TBinaryProtocol.h>
 #include <thrift/protocol/TMultiplexedProtocol.h>
@@ -22,7 +20,6 @@
 #include <thrift/TProcessor.h>
 #include <thrift/Thrift.h>
 
-// Generated headers
 #include "gen-cpp/Login.h"
 #include "gen-cpp/Search.h"
 #include "gen-cpp/Reports.h"
@@ -32,6 +29,7 @@ using namespace apache::thrift;
 using namespace apache::thrift::transport;
 using namespace apache::thrift::protocol;
 using namespace apache::thrift::server;
+using namespace Task2;
 
 struct SharedUserData {
     SharedUserData(unsigned connectionId) :
@@ -39,6 +37,7 @@ struct SharedUserData {
 
     unsigned connectionId;
     bool isLoggedIn;
+    std::map<std::string, std::set<std::string>> clientSummary;
 };
 
 // Implementation of the Login service
@@ -52,7 +51,6 @@ public:
 
     // Implementation of logIn
     void logIn(const std::string& userName, const std::int32_t key) override {
-        std::cout << "Login function" << std::endl;
         std::int32_t logKey = std::hash<std::string>{}(userName);
         if (user_data->isLoggedIn)
         {
@@ -77,7 +75,6 @@ public:
 
     // Implementation of logOut
     void logOut() override {
-        std::cout << "Logout function" << std::endl;
         if (!user_data->isLoggedIn)
         {
             ProtocolException ex;
@@ -102,7 +99,6 @@ public:
 
     // Client can fetch items only if it is search initializied and client is logged in
     void fetch(FetchResult& _return) override {
-        std::cout << "Fetch function" << std::endl;
         // Check if client is logged in
         if (!user_data->isLoggedIn)
         {
@@ -119,8 +115,8 @@ public:
             throw ex;
         }
 
-
-        if (initilizedLimit == 0)
+        // If there is no items to be fetched retern status ended
+        if (initilizedLimit-- == 0)
         {
             _return.status = FetchStatus::ENDED;
             return;
@@ -134,7 +130,7 @@ public:
         
 
         Item item;
-
+        // Generatate random index and select which type of items should be generated
         int index = rand() % initializedItems.size();
         std::string randomItemId = initializedItems.at(index);
 
@@ -142,44 +138,50 @@ public:
         {
             item.__isset.itemC = true;
             item.itemC.fieldX = (rand() & 1) == 0;
+            user_data->clientSummary.try_emplace("fieldX", std::set<std::string>()).first->second.emplace(item.itemC.fieldX ? "true" : "false");
         } else if (randomItemId.compare("ITEMA") == 0) {
             item.__isset.itemA = true;
             item.itemA.fieldX = genRandomString();
+            user_data->clientSummary.try_emplace("fieldX", std::set<std::string>()).first->second.emplace(item.itemA.fieldX);
 
-            int size = rand() % 8;
+            int size = (rand() % 8) + 1;
             for (int i = 0; i < size; i++)
             {
                 item.itemA.fieldY.push_back((short)rand());
             }
+            user_data->clientSummary.try_emplace("fieldY", std::set<std::string>()).first->second.emplace(to_string_commas<short>(item.itemA.fieldY));
 
             if ((rand() % 5) == 1)
             {
                 item.itemA.__isset.fieldZ = true;
                 item.itemA.fieldZ = rand();
+                user_data->clientSummary.try_emplace("fieldZ", std::set<std::string>()).first->second.emplace(std::to_string(item.itemA.fieldZ));
             }
             
         } else if (randomItemId.compare("ITEMB") == 0) {
             item.__isset.itemB = true;
             item.itemB.fieldX = (short)rand();
+            user_data->clientSummary.try_emplace("fieldX", std::set<std::string>()).first->second.emplace(std::to_string(item.itemB.fieldX));
 
             if ((rand() % 5) == 1)
             {
                 item.itemB.__isset.fieldY = true;
-                int size = rand() % 8;
+                int size = (rand() % 8) + 1;
+                std::cout << size << std::endl;
                 for (int i = 0; i < size; i++)
                 {
                     item.itemB.fieldY.push_back(genRandomString());
                 }
+                user_data->clientSummary.try_emplace("fieldY", std::set<std::string>()).first->second.emplace(to_string_commas<std::string>(item.itemB.fieldY));
             }
             
-            int size = rand() % 8;
+            int size = (rand() % 8) + 1;
             for (int i = 0; i < size; i++)
             {
                 item.itemB.fieldZ.insert(genRandomString());
             }
+            user_data->clientSummary.try_emplace("fieldZ", std::set<std::string>()).first->second.emplace(to_string_commas<std::string>(item.itemB.fieldZ));
         }
-            
-        initilizedLimit--;
         _return.status = FetchStatus::ITEM;
         _return.__set_item(item);
     }
@@ -187,7 +189,6 @@ public:
     // Client can initialize search without logging in!
     // After initializing search the query and the search limit will be stored in the server
     void initializeSearch(const std::string& query, const int32_t limit) override {
-        std::cout << "Search function" << std::endl;
 
         if (limit < 1 || query.compare("") == 0)
         {
@@ -198,6 +199,7 @@ public:
         
         initilizedLimit = limit;
 
+        // Parse string query to each type of item
         std::string itemId = "";
         for (auto x : query) 
         {
@@ -214,10 +216,35 @@ public:
     }
 
 private:
+    // Generates random string up to the length of 8
     std::string genRandomString() {
         std::string alphabet = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
         random_shuffle(alphabet.begin(), alphabet.end());
         return alphabet.substr(0, (rand() & 8) + 1);
+    }
+
+    // This function was taken from string_conversions.hpp!
+    template <typename T>
+    std::string to_string_commas(const std::vector<T>& vs){
+        std::stringstream ss;
+        bool first = true;
+        for(const auto& v: vs){
+            if(first){
+                first = false;
+            }
+            else{
+                ss << ',';
+            }
+            ss << v;
+        }
+        return ss.str();
+    }
+
+    // This function was taken from string_conversions.hpp!
+    template <typename T>
+    std::string to_string_commas(const std::set<T>& vs){
+        std::vector<T> s(vs.begin(), vs.end());
+        return to_string_commas(s);
     }
 };
 
@@ -230,7 +257,43 @@ public:
         user_data(user_data) {}
 
     bool saveSummary(const Summary& summary) override {
-        return true;
+        std::cout << "SizeC: " << summary.size() << std::endl;
+        std::cout << "SizeS: " << user_data->clientSummary.size() << std::endl;
+
+        std::map<std::string, std::set<std::string>>::iterator itr;
+        for (itr = user_data->clientSummary.begin(); itr != user_data->clientSummary.end(); ++itr) {
+        std::cout << '\t' << itr->first << '\t' << itr->second.size()
+             << '\n';
+        }
+
+        for (std::string s : (summary.find("fieldX"))->second) {
+            std::cout << s << '-';
+        }
+        std::cout << std::endl;
+        for (std::string ss : (user_data->clientSummary.find("fieldX"))->second) {
+            std::cout << ss << '-';
+        }
+        std::cout << std::endl;
+        std::cout << std::endl;
+        for (std::string s : (summary.find("fieldY"))->second) {
+            std::cout << s << '-';
+        }
+        std::cout << std::endl;
+        for (std::string ss : (user_data->clientSummary.find("fieldY"))->second) {
+            std::cout << ss << '-';
+        }
+        std::cout << std::endl;
+        std::cout << std::endl;
+        for (std::string s : (summary.find("fieldZ"))->second) {
+            std::cout << s << '-';
+        }
+        std::cout << std::endl;
+        for (std::string ss : (user_data->clientSummary.find("fieldZ"))->second) {
+            std::cout << ss << '-';
+        }
+        std::cout << std::endl;
+        
+        return summary == user_data->clientSummary;
     }
 };
 
@@ -243,7 +306,7 @@ public:
     // Constructor
     PerConnectionProcessorFactory(): connectionIdCounter(0) {}
 
-    // The counter is incremented for each connection
+    // Counter is increased for each conection
     unsigned assignId() {
         return ++connectionIdCounter;
     }
