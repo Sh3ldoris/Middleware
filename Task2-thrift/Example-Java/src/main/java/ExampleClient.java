@@ -13,7 +13,7 @@ public class ExampleClient {
     private static String userName = "";
     private static String query = "";
     private static int loginKey = 0;
-    private static int searchLimit = 5;
+    private static int searchLimit = 10;
 
     public static void main(String args[]) {
         if (args.length == 2) {
@@ -48,7 +48,7 @@ public class ExampleClient {
             System.out.println("Initializing search!\n");
 
             // Init the search with the query and limit
-            searchClient.initializeSearch("ITEMB;ITEMA;ITEMC", 10);
+            searchClient.initializeSearch(query, searchLimit);
 
             System.out.println("Fetching items!\n");
             Summary summary = new Summary();
@@ -72,27 +72,16 @@ public class ExampleClient {
                         if (item.isSetItemB()) {
                             processItemB(item.getItemB(), summary);
                             System.out.println("ItemB");
-                            System.out.println(
-                                    "FieldX: " + item.getItemB().fieldX
-                                            + ", fieldY: " + item.getItemB().fieldY
-                                            + ", fieldZ: " + item.getItemB().fieldZ
-                            );
                         }
 
                         if (item.isSetItemA()) {
                             processItemA(item.getItemA(), summary);
                             System.out.println("ItemA");
-                            System.out.println(
-                                    "FieldX: " + item.getItemA().fieldX
-                                            + ", fieldY: " + item.getItemA().fieldY
-                                            + ", fieldZ: " + item.getItemA().fieldZ
-                            );
                         }
 
                         if (item.isSetItemC()) {
                             processItemC(item.getItemC(), summary);
                             System.out.println("ItemC");
-                            System.out.println("FieldX: " + item.getItemC().fieldX);
                         }
                         break;
 
