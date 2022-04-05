@@ -134,12 +134,6 @@ public:
         int index = rand() % initializedItems.size();
         std::string randomItemId = initializedItems.at(index);
 
-        for(auto elem : initializedItems) {
-            std::cout << elem << ' ';
-        }
-
-        std::cout << std::endl;
-
         if (randomItemId.compare("ITEMC") == 0)
         {
             item.__isset.itemC = true;
@@ -173,7 +167,6 @@ public:
             {
                 item.itemB.__isset.fieldY = true;
                 int size = (rand() % 8) + 1;
-                std::cout << size << std::endl;
                 for (int i = 0; i < size; i++)
                 {
                     item.itemB.fieldY.push_back(genRandomString());
@@ -263,41 +256,13 @@ public:
         user_data(user_data) {}
 
     bool saveSummary(const Summary& summary) override {
-        std::cout << "SizeC: " << summary.size() << std::endl;
-        std::cout << "SizeS: " << user_data->clientSummary.size() << std::endl;
-
-        std::map<std::string, std::set<std::string>>::iterator itr;
-        for (itr = user_data->clientSummary.begin(); itr != user_data->clientSummary.end(); ++itr) {
-        std::cout << '\t' << itr->first << '\t' << itr->second.size()
-             << '\n';
+        // Check if client is logged in
+        if (!user_data->isLoggedIn)
+        {
+            ProtocolException ex;
+            ex.message= "Client is not logged in!";
+            throw ex;
         }
-
-        for (std::string s : (summary.find("fieldX"))->second) {
-            std::cout << s << '-';
-        }
-        std::cout << std::endl;
-        for (std::string ss : (user_data->clientSummary.find("fieldX"))->second) {
-            std::cout << ss << '-';
-        }
-        std::cout << std::endl;
-        std::cout << std::endl;
-        for (std::string s : (summary.find("fieldY"))->second) {
-            std::cout << s << '-';
-        }
-        std::cout << std::endl;
-        for (std::string ss : (user_data->clientSummary.find("fieldY"))->second) {
-            std::cout << ss << '-';
-        }
-        std::cout << std::endl;
-        std::cout << std::endl;
-        for (std::string s : (summary.find("fieldZ"))->second) {
-            std::cout << s << '-';
-        }
-        std::cout << std::endl;
-        for (std::string ss : (user_data->clientSummary.find("fieldZ"))->second) {
-            std::cout << ss << '-';
-        }
-        std::cout << std::endl;
         
         return summary == user_data->clientSummary;
     }
