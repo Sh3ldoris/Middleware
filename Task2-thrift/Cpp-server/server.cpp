@@ -134,6 +134,12 @@ public:
         int index = rand() % initializedItems.size();
         std::string randomItemId = initializedItems.at(index);
 
+        for(auto elem : initializedItems) {
+            std::cout << elem << ' ';
+        }
+
+        std::cout << std::endl;
+
         if (randomItemId.compare("ITEMC") == 0)
         {
             item.__isset.itemC = true;
