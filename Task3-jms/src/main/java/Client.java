@@ -247,8 +247,6 @@ public class Client {
 		// don't forget to include the clientName in the message so other clients know
 		// who is sending the offer - see how connect() does it when sending message to bank
 		offeredGoodsMessage.setStringProperty(CLIENT_NAME_PROPERTY, clientName);
-		// TODO: set action to publish offered goods
-
 		// send the message using the sender passed as parameter
 		sender.send(offeredGoodsMessage);
 	}
@@ -398,17 +396,27 @@ public class Client {
 		// TODO
 		
 		// parse the message, obtaining sender's name and list of offered goods
-		
+		ObjectMessage offerMessage;
+		if (msg instanceof ObjectMessage) {
+			offerMessage = (ObjectMessage) msg;
+		} else {
+			System.out.println("Cannot parse offerMessage!");
+			return;
+		}
+		String sender = offerMessage.getStringProperty(CLIENT_NAME_PROPERTY);
+		GoodsListDTO goodsListDTO = (GoodsListDTO) offerMessage.getObject();
 		// should ignore messages sent from myself
 		// if (clientName.equals(sender)) ...
-		
+		if (clientName.equals(sender)) {
+			return;
+		}
 		// store the list into availableGoods (replacing any previous offer)
 		// empty list means disconnecting client, remove it from availableGoods completely
-//		if (lst.isEmpty()) {
-//			availableGoods.remove(sender);
-//		} else {
-//			availableGoods.put(sender, lst);
-//		}
+		if (goodsListDTO.getGoodsList().isEmpty()) {
+			availableGoods.remove(sender);
+		} else {
+			availableGoods.put(sender, goodsListDTO.getGoodsList());
+		}
 	}
 	
 	/*
