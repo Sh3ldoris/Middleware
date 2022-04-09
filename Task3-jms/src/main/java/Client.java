@@ -175,7 +175,7 @@ public class Client {
 			}
 		});
 
-		// TODO finish the initialization
+		// Done TODO finish the initialization
 		
 		/* Step 1: Processing offers */
 		
@@ -237,15 +237,20 @@ public class Client {
 	 * Sometimes we publish the list on user's request, sometimes we react to an event
 	 */
 	private void publishGoodsList(MessageProducer sender, Session session) throws JMSException {
-		// TODO
+		// Done TODO
 		
 		// create a message (of appropriate type) holding the list of offered goods
 		// which can be created like this: new ArrayList<Goods>(offeredGoods.values())
-		
+		ObjectMessage offeredGoodsMessage = session.createObjectMessage();
+		// set new GoodsListDto to publish offered goods
+		offeredGoodsMessage.setObject(new GoodsListDTO(offeredGoods));
 		// don't forget to include the clientName in the message so other clients know
 		// who is sending the offer - see how connect() does it when sending message to bank
-		
-		// send the message using the sender passed as parameter 
+		offeredGoodsMessage.setStringProperty(CLIENT_NAME_PROPERTY, clientName);
+		// TODO: set action to publish offered goods
+
+		// send the message using the sender passed as parameter
+		sender.send(offeredGoodsMessage);
 	}
 	
 	/*
