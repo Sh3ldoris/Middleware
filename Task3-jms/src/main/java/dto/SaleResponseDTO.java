@@ -7,10 +7,12 @@ public class SaleResponseDTO implements Serializable {
 
     private SellResult sellResult;
     private String message;
+    private String goodsName;
 
-    public SaleResponseDTO(SellResult sellResult, String message) {
+    public SaleResponseDTO(SellResult sellResult, String message, String goodsName) {
         this.sellResult = sellResult;
         this.message = message;
+        this.goodsName = goodsName;
     }
 
     public SellResult getSellResult() {
@@ -27,5 +29,13 @@ public class SaleResponseDTO implements Serializable {
 
     public void setMessage(String message) {
         this.message = message;
+    }
+
+    public String getGoodsName() {
+        return goodsName;
+    }
+
+    public void setGoodsName(String goodsName) {
+        this.goodsName = goodsName;
     }
 }

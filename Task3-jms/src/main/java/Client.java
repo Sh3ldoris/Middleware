@@ -457,37 +457,54 @@ public class Client {
 	 * Process message requesting a sale
 	 */
 	private void processSale(Message msg) throws JMSException {
-		// TODO
+		// Done TODO
 		
 		/* Step 1: parse the message */
 		
 		// distinguish that it's the sale request message
-
+		ObjectMessage buyRequestObjMessage;
+		if (msg instanceof ObjectMessage) {
+			buyRequestObjMessage = (ObjectMessage) msg;
+		} else {
+			System.out.println("Cannot process buy request message!");
+			return;
+		}
+		BuyRequestDTO buyRequest = (BuyRequestDTO) buyRequestObjMessage.getObject();
 		// obtain buyer's name (buyerName), goods name (goodsName) , buyer's account number (buyerAccount)
-		
+		String buyerName = buyRequest.getBuyersName();
+		String goodsName = buyRequest.getGoodsName();
+		int buyerAccount = buyRequest.getBuyersAccountNum();
 		// also obtain reply destination (buyerDest)
 		// how? see for example Bank.processTextMessage()
-
+		Destination buyerDest = buyRequestObjMessage.getJMSReplyTo();
 		/* Step 2: decide what to do and modify data structures accordingly */
 		
 		// check if we still offer this goods
-//		Goods goods = offeredGoods.get(goodsName);
-//		if (goods != null) ...
+		Goods goods = offeredGoods.get(goodsName);
 
 		// if yes, we should remove it from offeredGoods and publish new list
 		// also it's useful to create a list of "reserved goods" together with buyer's information
 		// such as name, account number, reply destination
-//		offeredGoods.remove(goodsName);
-//		reservedGoods.put(buyerName, goods);
-//		reserverAccounts.put(buyerAccount, buyerName);
-//		reserverDestinations.put(buyerName, buyerDest);
-		
+		BuyResponseDTO buyResponse;
+		if (goods != null) {
+			offeredGoods.remove(goodsName);
+			reservedGoods.put(buyerName, goods);
+			reserverAccounts.put(buyerAccount, buyerName);
+			reserverDestinations.put(buyerName, buyerDest);
+
+			buyResponse = new BuyResponseDTO(SellResult.ACCEPTED, accountNumber, goods.price);
+		} else {
+			buyResponse = new BuyResponseDTO(SellResult.DENIED, accountNumber, goods.price);
+		}
+
 		/* Step 3: send reply message */
 		
 		// prepare reply message (accept or deny)
 		// accept message includes: my account number (accountNumber), price (goods.price)
-		
+		ObjectMessage buyResponseObjMessage = eventSession.createObjectMessage();
+		buyResponseObjMessage.setObject(buyResponse);
 		// send reply
+		eventSender.send(buyResponseObjMessage);
 	}
 	
 	/*
@@ -530,8 +547,11 @@ public class Client {
 
 					// prepare sale confirmation message
 					// includes: goods name (g.name)
-					
+					SaleResponseDTO saleResponse = new SaleResponseDTO(SellResult.CONFIRMED, "Request confirmed!", g.name);
+					ObjectMessage saleResponseObjMessage = eventSession.createObjectMessage();
+					saleResponseObjMessage.setObject(saleResponse);
 					// send reply (destination is buyerDest)
+					eventSender.send(buyerDest, saleResponseObjMessage);
 				} else {
 					// we don't consider this now for simplicity
 				}

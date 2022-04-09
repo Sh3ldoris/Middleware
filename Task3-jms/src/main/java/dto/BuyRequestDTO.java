@@ -5,30 +5,30 @@ import java.io.Serializable;
 public class BuyRequestDTO implements Serializable {
     private static final long serialVersionUID = 8109158516343803478L;
 
-    private String buyers_name;
-    private int buyers_account_num;
+    private String buyersName;
+    private int buyersAccountNum;
     private String goodsName;
 
     public BuyRequestDTO(String buyers_name, int buyers_account_num, String goodsName) {
-        this.buyers_name = buyers_name;
-        this.buyers_account_num = buyers_account_num;
+        this.buyersName = buyers_name;
+        this.buyersAccountNum = buyers_account_num;
         this.goodsName = goodsName;
     }
 
-    public String getBuyers_name() {
-        return buyers_name;
+    public String getBuyersName() {
+        return buyersName;
     }
 
-    public void setBuyers_name(String buyers_name) {
-        this.buyers_name = buyers_name;
+    public void setBuyersName(String buyersName) {
+        this.buyersName = buyersName;
     }
 
-    public int getBuyers_account_num() {
-        return buyers_account_num;
+    public int getBuyersAccountNum() {
+        return buyersAccountNum;
     }
 
-    public void setBuyers_account_num(int buyers_account_num) {
-        this.buyers_account_num = buyers_account_num;
+    public void setBuyersAccountNum(int buyersAccountNum) {
+        this.buyersAccountNum = buyersAccountNum;
     }
 
     public String getGoodsName() {
