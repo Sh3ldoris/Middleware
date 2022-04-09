@@ -1,8 +1,6 @@
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.LineNumberReader;
-import java.io.Serializable;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -10,6 +8,8 @@ import java.util.Random;
 
 import javax.jms.*;
 
+import dto.*;
+import model.Goods;
 import org.apache.activemq.artemis.jms.client.ActiveMQConnectionFactory;
 
 public class Client {
@@ -334,7 +334,7 @@ public class Client {
 			return;
 		}
 		
-		// TODO
+		// Done TODO
 		
 		// First consider what message types clients will use for communicating a sale
 		// we will need to transfer multiple values (of String and int) in each message 
@@ -344,14 +344,17 @@ public class Client {
 		
 		// create local reference to the seller's queue
 		// similar to Step 2 in connect() but using sellerName instead of clientName
-		
+		Queue sellersQueue = clientSession.createQueue(sellerName + SALE_QUEUE_SUFFIX);
 		// create message requesting sale of the goods
 		// includes: clientName, goodsName, accountNumber
 		// also include reply destination that the other client will use to send reply (replyQueue)
-		// how? see how connect() uses SetJMSReplyTo() 
-					
+		// how? see how connect() uses SetJMSReplyTo()
+		ObjectMessage buyRequestMessage = clientSession.createObjectMessage();
+		BuyRequestDTO buyRequest = new BuyRequestDTO(clientName, accountNumber, goodsName);
+		buyRequestMessage.setObject(buyRequest);
+		buyRequestMessage.setJMSReplyTo(replyQueue);
 		// send the message (with clientSender)
-		
+		clientSender.send(sellersQueue, buyRequestMessage);
 		/* Step 2: get seller's response and process it */
 		
 		// receive the reply (synchronously, using replyReceiver)
@@ -361,8 +364,22 @@ public class Client {
 		// in case of "denied", report to user and return from this method
 		// in case of "accepted"
 		// - obtain seller's account number and price to pay
-		int price = 0;
-		int sellerAccount = 0;
+		ObjectMessage buyResponseObjMessage;
+		Message buyResponseMessage = replyReceiver.receive();
+		if (buyResponseMessage instanceof ObjectMessage) {
+				buyResponseObjMessage = (ObjectMessage) buyResponseMessage;
+		} else {
+			System.out.println("Cannot process buy response message!");
+			return;
+		}
+		BuyResponseDTO buyResponse = (BuyResponseDTO) buyResponseObjMessage.getObject();
+		if (SellResult.DENIED.equals(buyResponse.getSellResult())) {
+			System.out.println("Buy request denied!");
+			return;
+		}
+
+		int price = buyResponse.getPriceToPay();
+		int sellerAccount = buyResponse.getSellersAccountNum();
 
 		/* Step 3: send message to bank requesting money transfer */
 		
@@ -381,17 +398,36 @@ public class Client {
 		/* Step 4: wait for seller's sale confirmation */
 		
 		// receive the confirmation, similar to Step 2
-
-		// parse message and verify it's confirmation message
-		
+		ObjectMessage saleResponseObjMessage;
+		Message saleResponseMessage = replyReceiver.receive();
+		if (saleResponseMessage instanceof ObjectMessage) {
+			saleResponseObjMessage = (ObjectMessage) saleResponseMessage;
+		} else {
+			System.out.println("Cannot process saleResponseMessage!");
+			return;
+		}
+		SaleResponseDTO saleResponse = (SaleResponseDTO) saleResponseObjMessage.getObject();
+		// parse message and verify its confirmation message
 		// report successful sale to the user
+		String message = "";
+		switch (saleResponse.getSellResult()) {
+			case CONFIRMED:
+				message = "The trade was successful!";
+				break;
+
+			case CANCELED:
+				message = "The trade was NOT successful!";
+				break;
+		}
+		System.out.println(saleResponse.getMessage());
+		System.out.println(message);
 	}
 	
 	/*
 	 * Process a message with goods offer
 	 */
 	private void processOffer(Message msg) throws JMSException {
-		// TODO
+		// Done TODO
 		
 		// parse the message, obtaining sender's name and list of offered goods
 		ObjectMessage offerMessage;
