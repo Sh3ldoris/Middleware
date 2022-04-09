@@ -188,7 +188,7 @@ public class Client {
 			@Override
 			public void onMessage(Message message) {
 				try {
-					processOffer(msg);
+					processOffer(message);
 				} catch (JMSException e) {
 					e.printStackTrace();
 				}
@@ -208,7 +208,7 @@ public class Client {
 			@Override
 			public void onMessage(Message message) {
 				try {
-					processSale(msg);
+					processSale(message);
 				} catch (JMSException e) {
 					e.printStackTrace();
 				}
