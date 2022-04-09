@@ -15,7 +15,11 @@ import org.apache.activemq.artemis.jms.client.ActiveMQConnectionFactory;
 public class Client {
 	
 	/****	CONSTANTS	****/
-	
+	// name of the topic for publishing and receiving offers
+	public static final String OFFERS_TOPIC = "offers";
+	// receive sale queue fixed suffix
+	public static final String SALE_QUEUE_SUFFIX = "SaleQueue";
+
 	// name of the property specifying client's name
 	public static final String CLIENT_NAME_PROPERTY = "clientName";
 
@@ -23,6 +27,8 @@ public class Client {
 	public static final String OFFER_TOPIC = "Offers";
 	
 	/****	PRIVATE VARIABLES	****/
+
+	private Topic offersTopic;
 	
 	// client's unique name
 	private String clientName;
@@ -173,25 +179,43 @@ public class Client {
 		
 		/* Step 1: Processing offers */
 		
-		// create a topic both for publishing and receiving offers
+		// create a topic, both for publishing and receiving offers
 		// hint: Sessions have a createTopic() method
-		
+		offersTopic = eventSession.createTopic(OFFERS_TOPIC);
 		// create a consumer of offers from the topic using the event session
-		
+		MessageConsumer offersConsumer = eventSession.createConsumer(offersTopic);
 		// set asynchronous listener for offers (see above how it can be done)
 		// which should call processOffer()
-		
+		offersConsumer.setMessageListener(new MessageListener() {
+			@Override
+			public void onMessage(Message message) {
+				try {
+					processOffer(msg);
+				} catch (JMSException e) {
+					e.printStackTrace();
+				}
+			}
+		});
 		/* Step 2: Processing sale requests */
 		
 		// create a queue for receiving sale requests (hint: Session has createQueue() method)
 		// note that Session's createTemporaryQueue() is not usable here, the queue must have a name
 		// that others will be able to determine from clientName (such as clientName + "SaleQueue")
-		    
+		Queue receiveSaleQueue = eventSession.createQueue(clientName + SALE_QUEUE_SUFFIX);
 		// create consumer of sale requests on the event session
-		    
+		MessageConsumer receiveSaleConsumer = eventSession.createConsumer(receiveSaleQueue);
 		// set asynchronous listener for sale requests (see above how it can be done)
 		// which should call processSale()
-		
+		receiveSaleConsumer.setMessageListener(new MessageListener() {
+			@Override
+			public void onMessage(Message message) {
+				try {
+					processSale(msg);
+				} catch (JMSException e) {
+					e.printStackTrace();
+				}
+			}
+		});
 		// end TODO
 		
 		// create temporary queue for synchronous replies
