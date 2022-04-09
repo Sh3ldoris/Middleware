@@ -1,1 +1,1 @@
-ACTIVEMQ_HOME=~/lib/apache-artemis-2.21.0
+ACTIVEMQ_HOME=$HOME/apache-artemis-2.19.1
