@@ -504,7 +504,7 @@ public class Client {
 		ObjectMessage buyResponseObjMessage = eventSession.createObjectMessage();
 		buyResponseObjMessage.setObject(buyResponse);
 		// send reply
-		eventSender.send(buyResponseObjMessage);
+		eventSender.send(buyerDest, buyResponseObjMessage);
 	}
 	
 	/*
