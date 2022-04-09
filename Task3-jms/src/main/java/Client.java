@@ -27,8 +27,6 @@ public class Client {
 	public static final String OFFER_TOPIC = "Offers";
 	
 	/****	PRIVATE VARIABLES	****/
-
-	private Topic offersTopic;
 	
 	// client's unique name
 	private String clientName;
@@ -181,9 +179,9 @@ public class Client {
 		
 		// create a topic, both for publishing and receiving offers
 		// hint: Sessions have a createTopic() method
-		offersTopic = eventSession.createTopic(OFFERS_TOPIC);
+		offerTopic = eventSession.createTopic(OFFERS_TOPIC);
 		// create a consumer of offers from the topic using the event session
-		MessageConsumer offersConsumer = eventSession.createConsumer(offersTopic);
+		MessageConsumer offersConsumer = eventSession.createConsumer(offerTopic);
 		// set asynchronous listener for offers (see above how it can be done)
 		// which should call processOffer()
 		offersConsumer.setMessageListener(new MessageListener() {
@@ -248,7 +246,7 @@ public class Client {
 		// who is sending the offer - see how connect() does it when sending message to bank
 		offeredGoodsMessage.setStringProperty(CLIENT_NAME_PROPERTY, clientName);
 		// send the message using the sender passed as parameter
-		sender.send(offeredGoodsMessage);
+		sender.send(offerTopic, offeredGoodsMessage);
 	}
 	
 	/*
