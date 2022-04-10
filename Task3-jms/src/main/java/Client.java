@@ -320,6 +320,30 @@ public class Client {
 			}
 		}
 	}
+
+	/*
+	 * Print balance of client's account
+	 */
+	private void checkAccountBalance() throws JMSException {
+
+		Message balanceCheckMessage = eventSession.createTextMessage(Bank.ACCOUNT_BALANCE);
+		balanceCheckMessage.setStringProperty(CLIENT_NAME_PROPERTY, clientName);
+		balanceCheckMessage.setJMSReplyTo(replyQueue);
+		clientSender.send(toBankQueue, balanceCheckMessage);
+
+		// wait for bank reply
+		TextMessage accBalanceReply;
+		Message replyMessage = replyReceiver.receive();
+		if (replyMessage instanceof TextMessage) {
+			accBalanceReply = (TextMessage) replyMessage;
+		} else {
+			System.out.println("Cannot process bank account balance reply!");
+			return;
+		}
+
+		System.out.println("Your account balance is:");
+		System.out.println("    $" + accBalanceReply.getText());
+	}
 	
 	/*
 	 * Main interactive user loop
@@ -334,6 +358,7 @@ public class Client {
 			System.out.println(" l - list available goods");
 			System.out.println(" p - publish list of offered goods");
 			System.out.println(" b - buy goods");
+			System.out.println(" c - check account balance");
 			System.out.println(" q - quit");
 			// read first character
 			int c = in.read();
@@ -348,6 +373,9 @@ public class Client {
 					break;
 				case 'l':
 					list();
+					break;
+				case 'c':
+					checkAccountBalance();
 					break;
 				case 'p':
 					publishGoodsList(clientSender, clientSession);
@@ -586,7 +614,7 @@ public class Client {
 					reserverAccounts.remove(buyerAccount);
 					reservedGoods.remove(buyerName);
 					
-					/* TODO Step 3: send confirmation message */
+					/* Done TODO Step 3: send confirmation message */
 
 					// prepare sale confirmation message
 					// includes: goods name (g.name)

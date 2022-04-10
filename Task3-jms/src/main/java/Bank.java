@@ -9,6 +9,9 @@ public class Bank implements MessageListener {
 	
 	/**** PUBLIC CONSTANTS ****/
 
+	// text message command return account balance
+	public static final String ACCOUNT_BALANCE = "BALANCE";
+
 	// text message command open new account
 	public static final String NEW_ACCOUNT_MSG = "NEW_ACCOUNT";
 	
@@ -64,6 +67,8 @@ public class Bank implements MessageListener {
 	
 	// map client names to client report destinations
 	private Map<String, Destination> clientDestinations = new HashMap<String, Destination>();
+
+	private Map<Integer, Integer> accountsBalances = new HashMap<Integer, Integer>();
 	
 	// TODO: store and check account balance
 	// in the current implementation, a transfer always succeeds 
@@ -129,6 +134,7 @@ public class Bank implements MessageListener {
 				// also store the newly assigned number
 				clientAccounts.put(clientName, accountNumber);
 				accountsClients.put(accountNumber, clientName);
+				accountsBalances.put(accountNumber, 12000);
 			}
 			
 			System.out.println("Connected client " + clientName + " with account " + accountNumber);
@@ -137,6 +143,23 @@ public class Bank implements MessageListener {
 			TextMessage reply = bankSession.createTextMessage(String.valueOf(accountNumber));
 			// send the reply to the provided reply destination
 			bankSender.send(replyDest, reply);
+		} else if (ACCOUNT_BALANCE.equals(txtMsg.getText())) {
+			// create message reply
+			TextMessage balanceMessage = bankSession.createTextMessage();
+
+			// get the client's name stored as a property
+			String clientName = txtMsg.getStringProperty(Client.CLIENT_NAME_PROPERTY);
+
+			// get client's account number and set balance as message text
+			if (clientAccounts.get(clientName) != null) {
+				int accountNumber = clientAccounts.get(clientName);
+				balanceMessage.setText(String.valueOf(accountsBalances.get(accountNumber)));
+			} else {
+				balanceMessage.setText("N/A");
+			}
+
+			// send the response message to the client with provided destination
+			bankSender.send(replyDest, balanceMessage);
 		} else {
 			System.out.println("Received unknown text message: " + txtMsg.getText());
 			System.out.println("Full message info:\n" + txtMsg);
