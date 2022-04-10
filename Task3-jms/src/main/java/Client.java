@@ -564,6 +564,7 @@ public class Client {
 			reserverDestinations.put(buyerName, buyerDest);
 
 			buyResponse = new BuyResponseDTO(SellResult.ACCEPTED, accountNumber, goods.price);
+			publishGoodsList(clientSender, clientSession);
 		} else {
 			buyResponse = new BuyResponseDTO(SellResult.DENIED, accountNumber, goods.price);
 		}
