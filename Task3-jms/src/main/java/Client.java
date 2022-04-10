@@ -551,7 +551,13 @@ public class Client {
 		/* Step 2: decide what to do and modify data structures accordingly */
 		
 		// check if we still offer this goods
-		Goods goods = offeredGoods.get(goodsName);
+		Goods goods;
+		try {
+			goods = offeredGoods.get(goodsName);
+		} catch (NullPointerException ex) {
+			goods = null;
+		}
+
 
 		// if yes, we should remove it from offeredGoods and publish new list
 		// also it's useful to create a list of "reserved goods" together with buyer's information
