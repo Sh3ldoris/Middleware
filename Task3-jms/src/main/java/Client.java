@@ -282,6 +282,7 @@ public class Client {
 	private void fetchGoods(MessageProducer sender, Session session) throws JMSException {
 		MapMessage fetchGoodsMessage = session.createMapMessage();
 		fetchGoodsMessage.setStringProperty(CLIENT_COMMAND_PROPERTY, FETCH_GOODS_CMD);
+		fetchGoodsMessage.setStringProperty(CLIENT_NAME_PROPERTY, clientName);
 		sender.send(clientCmdTopic, fetchGoodsMessage);
 	}
 	
@@ -606,14 +607,21 @@ public class Client {
 		System.out.println("Command processing!");
 		// distinguish that it's command message
 		MapMessage commandMapMessage;
-		if (msg instanceof ObjectMessage) {
+		if (msg instanceof MapMessage) {
 			commandMapMessage = (MapMessage) msg;
 		} else {
 			System.out.println("Cannot process command message!");
 			return;
 		}
+		// get client's name
+		String sender = commandMapMessage.getStringProperty(CLIENT_NAME_PROPERTY);
 		// get command from message
 		String command = commandMapMessage.getStringProperty(CLIENT_COMMAND_PROPERTY);
+
+		// Don't accept command from itself
+		if (clientName.equals(sender)) {
+			return;
+		}
 
 		if (FETCH_GOODS_CMD.equals(command)) {
 			System.out.println("publishing goods!");
