@@ -279,10 +279,16 @@ public class Client {
 		sender.send(offerTopic, offeredGoodsMessage);
 	}
 
+	/*
+	 * Publish a command to fetch all goods that are available
+	 */
 	private void fetchGoods(MessageProducer sender, Session session) throws JMSException {
+		// Create a MapMessage
 		MapMessage fetchGoodsMessage = session.createMapMessage();
+		// Set sender's client name and command which should be proccesed
 		fetchGoodsMessage.setStringProperty(CLIENT_COMMAND_PROPERTY, FETCH_GOODS_CMD);
 		fetchGoodsMessage.setStringProperty(CLIENT_NAME_PROPERTY, clientName);
+		// Send message to the Client command topic
 		sender.send(clientCmdTopic, fetchGoodsMessage);
 	}
 	
@@ -604,7 +610,6 @@ public class Client {
 	 * Process message with client command
 	 */
 	private void processClientCommand(Message msg) throws JMSException {
-		System.out.println("Command processing!");
 		// distinguish that it's command message
 		MapMessage commandMapMessage;
 		if (msg instanceof MapMessage) {
@@ -624,7 +629,6 @@ public class Client {
 		}
 
 		if (FETCH_GOODS_CMD.equals(command)) {
-			System.out.println("publishing goods!");
 			publishGoodsList(clientSender, clientSession);
 		} else {
 			System.out.println("Unrecognized command! Command -> " + command);
