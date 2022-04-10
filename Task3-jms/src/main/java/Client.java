@@ -16,9 +16,16 @@ public class Client {
 	
 	/****	CONSTANTS	****/
 	// name of the topic for publishing and receiving offers
+	public static final String CMD_TOPIC = "commands";
+	// name of the topic for publishing and receiving offers
 	public static final String OFFERS_TOPIC = "offers";
+
 	// receive sale queue fixed suffix
 	public static final String SALE_QUEUE_SUFFIX = "SaleQueue";
+	// name of the property specifying client command
+	public static final String CLIENT_COMMAND_PROPERTY = "clientCommand";
+	// command name for fetching list of goods
+	public static final String FETCH_GOODS_CMD = "fetchGoods";
 
 	// name of the property specifying client's name
 	public static final String CLIENT_NAME_PROPERTY = "clientName";
@@ -69,6 +76,9 @@ public class Client {
 	
 	// topic to send and receiver offers
 	private Topic offerTopic;
+
+	// topic to send and receiver clients commands
+	private Topic clientCmdTopic;
 	
 	// queue for sending messages to bank
 	private Queue toBankQueue;
@@ -215,6 +225,24 @@ public class Client {
 			}
 		});
 		// end TODO
+
+		// Create topic for client command
+		// In a case of new client is connected it will send command to fetch other clients goods
+		clientCmdTopic = eventSession.createTopic(CMD_TOPIC);
+		// create a consumer of commands from the topic using the event session
+		MessageConsumer cmdConsumer = eventSession.createConsumer(clientCmdTopic);
+		// set asynchronous listener for commands (see above how it can be done)
+		// which should call processOffer()
+		cmdConsumer.setMessageListener(new MessageListener() {
+			@Override
+			public void onMessage(Message message) {
+				try {
+					processClientCommand(message);
+				} catch (JMSException e) {
+					e.printStackTrace();
+				}
+			}
+		});
 		
 		// create temporary queue for synchronous replies
 		replyQueue = clientSession.createTemporaryQueue();
@@ -227,6 +255,8 @@ public class Client {
 		
 		// send list of offered goods
 		publishGoodsList(clientSender, clientSession);
+
+		fetchGoods(clientSender, clientSession);
 	}
 
 	/*
@@ -247,6 +277,12 @@ public class Client {
 		offeredGoodsMessage.setStringProperty(CLIENT_NAME_PROPERTY, clientName);
 		// send the message using the sender passed as parameter
 		sender.send(offerTopic, offeredGoodsMessage);
+	}
+
+	private void fetchGoods(MessageProducer sender, Session session) throws JMSException {
+		MapMessage fetchGoodsMessage = session.createMapMessage();
+		fetchGoodsMessage.setStringProperty(CLIENT_COMMAND_PROPERTY, FETCH_GOODS_CMD);
+		sender.send(clientCmdTopic, fetchGoodsMessage);
 	}
 	
 	/*
@@ -560,6 +596,30 @@ public class Client {
 			}
 		} else {
 			System.out.println("Received unknown message:\n: " + msg);
+		}
+	}
+
+	/*
+	 * Process message with client command
+	 */
+	private void processClientCommand(Message msg) throws JMSException {
+		System.out.println("Command processing!");
+		// distinguish that it's command message
+		MapMessage commandMapMessage;
+		if (msg instanceof ObjectMessage) {
+			commandMapMessage = (MapMessage) msg;
+		} else {
+			System.out.println("Cannot process command message!");
+			return;
+		}
+		// get command from message
+		String command = commandMapMessage.getStringProperty(CLIENT_COMMAND_PROPERTY);
+
+		if (FETCH_GOODS_CMD.equals(command)) {
+			System.out.println("publishing goods!");
+			publishGoodsList(clientSender, clientSession);
+		} else {
+			System.out.println("Unrecognized command! Command -> " + command);
 		}
 	}
 	
