@@ -192,7 +192,24 @@ public class Bank implements MessageListener {
 			
 			// get amount of money being transferred
 			int amount = mapMsg.getInt(AMOUNT_KEY);
-						
+
+			// TODO: checks if there mapped account balances for given accounts
+
+			// If the client has not enough money for the transaction return canceled payment
+			if (accountsBalances.get(clientAccount) < amount) {
+				// TODO: implement
+				return;
+			}
+
+			// Decrease client's account balance
+			int oldClientBalance = accountsBalances.get(clientAccount);
+			accountsBalances.replace(clientAccount, oldClientBalance - amount);
+
+			// Increase destination account's balance
+			int oldDestinationBalance = accountsBalances.get(destAccount);
+			accountsBalances.replace(destAccount, oldDestinationBalance + amount);
+
+
 			System.out.println("Transferring $" + amount + " from account " + clientAccount + " to account " + destAccount);
 			
 			// create report message for the receiving client
