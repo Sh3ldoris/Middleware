@@ -137,7 +137,7 @@ public class Bank implements MessageListener {
 				// also store the newly assigned number
 				clientAccounts.put(clientName, accountNumber);
 				accountsClients.put(accountNumber, clientName);
-				accountsBalances.put(accountNumber, 12000);
+				accountsBalances.put(accountNumber, 1200); //TODO: Remove, only for debugging
 			}
 			
 			System.out.println("Connected client " + clientName + " with account " + accountNumber);
@@ -198,35 +198,32 @@ public class Bank implements MessageListener {
 
 			// TODO: checks if there mapped account balances for given accounts
 
-			// If the client has not enough money for the transaction return canceled payment
-			if (accountsBalances.get(clientAccount) < amount) {
-				// TODO: implement
-				return;
-			}
-
-			// Decrease client's account balance
-			int oldClientBalance = accountsBalances.get(clientAccount);
-			accountsBalances.replace(clientAccount, oldClientBalance - amount);
-
-			// Increase destination account's balance
-			int oldDestinationBalance = accountsBalances.get(destAccount);
-			accountsBalances.replace(destAccount, oldDestinationBalance + amount);
-
-
-			System.out.println("Transferring $" + amount + " from account " + clientAccount + " to account " + destAccount);
-			
 			// create report message for the receiving client
 			MapMessage reportMsg = bankSession.createMapMessage();
-			
-			// set report type to "you received money"
-			reportMsg.setInt(REPORT_TYPE_KEY, REPORT_TYPE_RECEIVED);
-			
 			// set sender's account number
 			reportMsg.setInt(REPORT_SENDER_ACC_KEY, clientAccount);
-			
-			// set money of amount transfered
-			reportMsg.setInt(AMOUNT_KEY, amount);
-			
+
+			// If the client has not enough money for the transaction return canceled payment
+			if (accountsBalances.get(clientAccount) < amount) {
+				reportMsg.setInt(REPORT_TYPE_KEY, REPORT_TYPE_CANCELED);
+				reportMsg.setInt(AMOUNT_KEY, 0);
+			} else {
+				// Decrease client's account balance
+				int oldClientBalance = accountsBalances.get(clientAccount);
+				accountsBalances.replace(clientAccount, oldClientBalance - amount);
+
+				// Increase destination account's balance
+				int oldDestinationBalance = accountsBalances.get(destAccount);
+				accountsBalances.replace(destAccount, oldDestinationBalance + amount);
+
+				// set report type to "you received money"
+				reportMsg.setInt(REPORT_TYPE_KEY, REPORT_TYPE_RECEIVED);
+				// set money of amount transfered
+				reportMsg.setInt(AMOUNT_KEY, amount);
+
+				System.out.println("Transferring $" + amount + " from account " + clientAccount + " to account " + destAccount);
+			}
+
 			// send report to receiver client's destination
 			bankSender.send(dest, reportMsg);
 		} else {

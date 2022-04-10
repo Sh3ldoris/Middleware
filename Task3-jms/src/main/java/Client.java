@@ -459,7 +459,7 @@ public class Client {
 		bankMsg.setStringProperty(CLIENT_NAME_PROPERTY, clientName);
 		bankMsg.setInt(Bank.ORDER_TYPE_KEY, Bank.ORDER_TYPE_SEND);
 		bankMsg.setInt(Bank.ORDER_RECEIVER_ACC_KEY, sellerAccount);
-		bankMsg.setInt(Bank.AMOUNT_KEY, price - 10); //TODO: Remove, only for debugging
+		bankMsg.setInt(Bank.AMOUNT_KEY, price);
 		
 		System.out.println("Sending $" + price + " to account " + sellerAccount);
 		
@@ -566,7 +566,7 @@ public class Client {
 			buyResponse = new BuyResponseDTO(SellResult.ACCEPTED, accountNumber, goods.price);
 			publishGoodsList(clientSender, clientSession);
 		} else {
-			buyResponse = new BuyResponseDTO(SellResult.DENIED, accountNumber, goods.price);
+			buyResponse = new BuyResponseDTO(SellResult.DENIED, accountNumber, 0);
 		}
 
 		/* Step 3: send reply message */
@@ -631,6 +631,13 @@ public class Client {
 							buyerDest
 					);
 				}
+			} else if (cmd == Bank.REPORT_TYPE_CANCELED) {
+				// unsuccessful bank transaction
+				putGoodsOnAvailableList(g);
+				sendSaleResponse(
+						new SaleResponseDTO(SellResult.CANCELED, "Bank transaction canceled!", g.name),
+						buyerDest
+				);
 			} else {
 				System.out.println("Received unknown MapMessage:\n: " + msg);
 			}
