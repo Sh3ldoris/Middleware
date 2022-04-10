@@ -9,9 +9,6 @@ public class Bank implements MessageListener {
 	
 	/**** PUBLIC CONSTANTS ****/
 
-	// text message command return account balance
-	public static final String ACCOUNT_BALANCE = "BALANCE";
-
 	// text message command open new account
 	public static final String NEW_ACCOUNT_MSG = "NEW_ACCOUNT";
 	
@@ -73,13 +70,15 @@ public class Bank implements MessageListener {
 
 	private Map<Integer, Integer> accountsBalances = new HashMap<Integer, Integer>();
 	
-	// TODO: store and check account balance
+	// Done TODO: store and check account balance
 	// in the current implementation, a transfer always succeeds 
 	// (1) check if the client has enough money
 	// (2) if not, send a message that the transfer failed instead
 	// (3) if yes, send the messages that the transfer succeeded and decrease the balance
 			
-	// TODO: add a command to get current account balance 
+	// Done TODO: add a command to get current account balance
+	// text message command return account balance
+	public static final String ACCOUNT_BALANCE = "BALANCE";
 	
 	/**** PRIVATE METHODS ****/
 	
@@ -137,7 +136,7 @@ public class Bank implements MessageListener {
 				// also store the newly assigned number
 				clientAccounts.put(clientName, accountNumber);
 				accountsClients.put(accountNumber, clientName);
-				accountsBalances.put(accountNumber, 1200); //TODO: Remove, only for debugging
+				accountsBalances.put(accountNumber, 12000);
 			}
 			
 			System.out.println("Connected client " + clientName + " with account " + accountNumber);
@@ -196,7 +195,9 @@ public class Bank implements MessageListener {
 			// get amount of money being transferred
 			int amount = mapMsg.getInt(AMOUNT_KEY);
 
-			// TODO: checks if there mapped account balances for given accounts
+			if (accountsBalances.get(clientAccount) == null || accountsBalances.get(destAccount) == null) {
+				return;
+			}
 
 			// create report message for the receiving client
 			MapMessage reportMsg = bankSession.createMapMessage();
