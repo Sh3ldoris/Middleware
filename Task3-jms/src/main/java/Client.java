@@ -459,7 +459,7 @@ public class Client {
 		bankMsg.setStringProperty(CLIENT_NAME_PROPERTY, clientName);
 		bankMsg.setInt(Bank.ORDER_TYPE_KEY, Bank.ORDER_TYPE_SEND);
 		bankMsg.setInt(Bank.ORDER_RECEIVER_ACC_KEY, sellerAccount);
-		bankMsg.setInt(Bank.AMOUNT_KEY, price);
+		bankMsg.setInt(Bank.AMOUNT_KEY, price - 10); //TODO: Remove, only for debugging
 		
 		System.out.println("Sending $" + price + " to account " + sellerAccount);
 		
@@ -588,44 +588,48 @@ public class Client {
 		// Bank reports are sent as MapMessage
 		if (msg instanceof MapMessage) {
 			MapMessage mapMsg = (MapMessage) msg;
+
+			// get account number of sender and the amount of money sent
+			int buyerAccount = mapMsg.getInt(Bank.REPORT_SENDER_ACC_KEY);
+			int amount = mapMsg.getInt(Bank.AMOUNT_KEY);
+
+			// match the sender account with sender
+			String buyerName = reserverAccounts.get(buyerAccount);
+
+			// match the reserved goods
+			Goods g = reservedGoods.get(buyerName);
+
+			// get the buyer's destination
+			Destination buyerDest = reserverDestinations.get(buyerName);
+
+			// remove the reserved goods and buyer-related information
+			reserverDestinations.remove(buyerName);
+			reserverAccounts.remove(buyerAccount);
+			reservedGoods.remove(buyerName);
+
 			// get report number
 			int cmd = mapMsg.getInt(Bank.REPORT_TYPE_KEY);
 			if (cmd == Bank.REPORT_TYPE_RECEIVED) {
-				// get account number of sender and the amount of money sent
-				int buyerAccount = mapMsg.getInt(Bank.REPORT_SENDER_ACC_KEY);
-				int amount = mapMsg.getInt(Bank.AMOUNT_KEY);
-				
-				// match the sender account with sender
-				String buyerName = reserverAccounts.get(buyerAccount);
-				
-				// match the reserved goods
-				Goods g = reservedGoods.get(buyerName);
-				
+
 				System.out.println("Received $" + amount + " from " + buyerName);
 				
 				/* Step 2: decide what to do and modify data structures accordingly */
 				
 				// did he pay enough?
 				if (amount >= g.price) {
-					// get the buyer's destination
-					Destination buyerDest = reserverDestinations.get(buyerName);
-
-					// remove the reserved goods and buyer-related information
-					reserverDestinations.remove(buyerName);
-					reserverAccounts.remove(buyerAccount);
-					reservedGoods.remove(buyerName);
-					
 					/* Done TODO Step 3: send confirmation message */
 
 					// prepare sale confirmation message
 					// includes: goods name (g.name)
-					SaleResponseDTO saleResponse = new SaleResponseDTO(SellResult.CONFIRMED, "Request confirmed!", g.name);
-					ObjectMessage saleResponseObjMessage = eventSession.createObjectMessage();
-					saleResponseObjMessage.setObject(saleResponse);
 					// send reply (destination is buyerDest)
-					eventSender.send(buyerDest, saleResponseObjMessage);
+					sendSaleResponse(new SaleResponseDTO(SellResult.CONFIRMED, "Request confirmed!", g.name), buyerDest);
 				} else {
-					// we don't consider this now for simplicity
+					// If the buyer did not pay enough money we canceled reservation and keep money for simplicity
+					putGoodsOnAvailableList(g);
+					sendSaleResponse(
+							new SaleResponseDTO(SellResult.CANCELED, "Request canceled, did not pay enough!", g.name),
+							buyerDest
+					);
 				}
 			} else {
 				System.out.println("Received unknown MapMessage:\n: " + msg);
@@ -652,7 +656,7 @@ public class Client {
 		// get command from message
 		String command = commandMapMessage.getStringProperty(CLIENT_COMMAND_PROPERTY);
 
-		// Don't accept command from itself
+		// Don't accept command from myself
 		if (clientName.equals(sender)) {
 			return;
 		}
@@ -662,6 +666,23 @@ public class Client {
 		} else {
 			System.out.println("Unrecognized command! Command -> " + command);
 		}
+	}
+
+	/*
+	 * Insert provided goods to the offered goods list and publish available goods list
+	 */
+	private void putGoodsOnAvailableList(Goods goods) throws JMSException {
+		if (goods == null) {
+			return;
+		}
+		offeredGoods.put(goods.name, goods);
+		publishGoodsList(clientSender, clientSession);
+	}
+
+	private void sendSaleResponse(SaleResponseDTO saleResponse, Destination destination) throws JMSException {
+		ObjectMessage saleResponseObjMessage = eventSession.createObjectMessage();
+		saleResponseObjMessage.setObject(saleResponse);
+		eventSender.send(destination, saleResponseObjMessage);
 	}
 	
 	/**** PUBLIC METHODS ****/

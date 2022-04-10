@@ -35,6 +35,9 @@ public class Bank implements MessageListener {
 	 
 	// report type "received money"
 	public static final int REPORT_TYPE_RECEIVED = 1;
+
+	// report type "canceled transaction"
+	public static final int REPORT_TYPE_CANCELED = -1;
 	
 	// MapMessage key for sender's account
 	public static final String REPORT_SENDER_ACC_KEY = "senderAccount";
