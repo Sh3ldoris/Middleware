@@ -599,53 +599,69 @@ public class Client {
 			int buyerAccount = mapMsg.getInt(Bank.REPORT_SENDER_ACC_KEY);
 			int amount = mapMsg.getInt(Bank.AMOUNT_KEY);
 
-			// match the sender account with sender
-			String buyerName = reserverAccounts.get(buyerAccount);
+			// create response
+			SaleResponseDTO saleResponse = null;
 
-			// match the reserved goods
-			Goods g = reservedGoods.get(buyerName);
+			Destination buyerDest = null;
 
-			// get the buyer's destination
-			Destination buyerDest = reserverDestinations.get(buyerName);
+			// Process the message
+			synchronized (this) {
+				// match the sender account with sender
+				String buyerName = reserverAccounts.get(buyerAccount);
 
-			// remove the reserved goods and buyer-related information
-			reserverDestinations.remove(buyerName);
-			reserverAccounts.remove(buyerAccount);
-			reservedGoods.remove(buyerName);
+				// match the reserved goods
+				Goods g = reservedGoods.get(buyerName);
 
-			// get report number
-			int cmd = mapMsg.getInt(Bank.REPORT_TYPE_KEY);
-			if (cmd == Bank.REPORT_TYPE_RECEIVED) {
+				// get the buyer's destination
+				buyerDest = reserverDestinations.get(buyerName);
 
-				System.out.println("Received $" + amount + " from " + buyerName);
-				
-				/* Step 2: decide what to do and modify data structures accordingly */
-				
-				// did he pay enough?
-				if (amount >= g.price) {
-					/* Done TODO Step 3: send confirmation message */
+				// remove the reserved goods and buyer-related information
+				reserverDestinations.remove(buyerName);
+				reserverAccounts.remove(buyerAccount);
+				reservedGoods.remove(buyerName);
 
-					// prepare sale confirmation message
-					// includes: goods name (g.name)
-					// send reply (destination is buyerDest)
-					sendSaleResponse(new SaleResponseDTO(SellResult.CONFIRMED, "Request confirmed!", g.name), buyerDest);
-				} else {
-					// If the buyer did not pay enough money we canceled reservation and keep money for simplicity
-					putGoodsOnAvailableList(g);
-					sendSaleResponse(
+				// get report number
+				int cmd = mapMsg.getInt(Bank.REPORT_TYPE_KEY);
+				if (cmd == Bank.REPORT_TYPE_RECEIVED) {
+
+					System.out.println("Received $" + amount + " from " + buyerName);
+
+					/* Step 2: decide what to do and modify data structures accordingly */
+
+					// did he pay enough?
+					if (amount >= g.price) {
+						/* Done TODO Step 3: send confirmation message */
+
+						// prepare sale confirmation message
+						// includes: goods name (g.name)
+						// send reply (destination is buyerDest)
+						saleResponse = new SaleResponseDTO(SellResult.CONFIRMED, "Request confirmed!", g.name);
+						// sendSaleResponse(new SaleResponseDTO(SellResult.CONFIRMED, "Request confirmed!", g.name), buyerDest); TODO: remove
+					} else {
+						// If the buyer did not pay enough money we canceled reservation and keep money for simplicity
+						putGoodsOnAvailableList(g);
+						saleResponse = new SaleResponseDTO(SellResult.CANCELED, "Request canceled, did not pay enough!", g.name);
+					/*sendSaleResponse(
 							new SaleResponseDTO(SellResult.CANCELED, "Request canceled, did not pay enough!", g.name),
 							buyerDest
-					);
-				}
-			} else if (cmd == Bank.REPORT_TYPE_CANCELED) {
-				// unsuccessful bank transaction
-				putGoodsOnAvailableList(g);
-				sendSaleResponse(
+					); TODO: Remove*/
+					}
+				} else if (cmd == Bank.REPORT_TYPE_CANCELED) {
+					// unsuccessful bank transaction
+					putGoodsOnAvailableList(g);
+					saleResponse = new SaleResponseDTO(SellResult.CANCELED, "Bank transaction canceled!", g.name);
+				/*sendSaleResponse(
 						new SaleResponseDTO(SellResult.CANCELED, "Bank transaction canceled!", g.name),
 						buyerDest
-				);
-			} else {
-				System.out.println("Received unknown MapMessage:\n: " + msg);
+				); TODO: Remove*/
+				} else {
+					System.out.println("Received unknown MapMessage:\n: " + msg);
+				}
+			}
+
+			// If saleResponse is not null, it is good to send response
+			if (saleResponse != null && buyerDest != null) {
+				sendSaleResponse(saleResponse, buyerDest);
 			}
 		} else {
 			System.out.println("Received unknown message:\n: " + msg);
