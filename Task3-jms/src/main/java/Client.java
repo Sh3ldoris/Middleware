@@ -398,13 +398,15 @@ public class Client {
 		System.out.println("Enter goods name:");
 		String goodsName = in.readLine();
 
-		// check if the seller exists
-		List<Goods> sellerGoods = availableGoods.get(sellerName);
-		if (sellerGoods == null) {
-			System.out.println("Seller does not exist: " + sellerName);
-			return;
+		synchronized (this) {
+			// check if the seller exists
+			List<Goods> sellerGoods = availableGoods.get(sellerName);
+			if (sellerGoods == null) {
+				System.out.println("Seller does not exist: " + sellerName);
+				return;
+			}
 		}
-		
+
 		// Done TODO
 		
 		// First consider what message types clients will use for communicating a sale
@@ -517,10 +519,12 @@ public class Client {
 		}
 		// store the list into availableGoods (replacing any previous offer)
 		// empty list means disconnecting client, remove it from availableGoods completely
-		if (goodsListDTO.getGoodsList().isEmpty()) {
-			availableGoods.remove(sender);
-		} else {
-			availableGoods.put(sender, goodsListDTO.getGoodsList());
+		synchronized (this) {
+			if (goodsListDTO.getGoodsList().isEmpty()) {
+				availableGoods.remove(sender);
+			} else {
+				availableGoods.put(sender, goodsListDTO.getGoodsList());
+			}
 		}
 	}
 	
@@ -549,30 +553,35 @@ public class Client {
 		// how? see for example Bank.processTextMessage()
 		Destination buyerDest = buyRequestObjMessage.getJMSReplyTo();
 		/* Step 2: decide what to do and modify data structures accordingly */
-		
-		// check if we still offer this goods
+
+		BuyResponseDTO buyResponse;
 		Goods goods;
-		try {
-			goods = offeredGoods.get(goodsName);
-		} catch (NullPointerException ex) {
-			goods = null;
+		synchronized (this) {
+			// check if we still offer this goods
+			try {
+				goods = offeredGoods.get(goodsName);
+			} catch (NullPointerException ex) {
+				goods = null;
+			}
+
+
+			// if yes, we should remove it from offeredGoods and publish new list
+			// also it's useful to create a list of "reserved goods" together with buyer's information
+			// such as name, account number, reply destination
+			if (goods != null) {
+				offeredGoods.remove(goodsName);
+				reservedGoods.put(buyerName, goods);
+				reserverAccounts.put(buyerAccount, buyerName);
+				reserverDestinations.put(buyerName, buyerDest);
+
+				buyResponse = new BuyResponseDTO(SellResult.ACCEPTED, accountNumber, goods.price);
+			} else {
+				buyResponse = new BuyResponseDTO(SellResult.DENIED, accountNumber, 0);
+			}
 		}
 
-
-		// if yes, we should remove it from offeredGoods and publish new list
-		// also it's useful to create a list of "reserved goods" together with buyer's information
-		// such as name, account number, reply destination
-		BuyResponseDTO buyResponse;
 		if (goods != null) {
-			offeredGoods.remove(goodsName);
-			reservedGoods.put(buyerName, goods);
-			reserverAccounts.put(buyerAccount, buyerName);
-			reserverDestinations.put(buyerName, buyerDest);
-
-			buyResponse = new BuyResponseDTO(SellResult.ACCEPTED, accountNumber, goods.price);
 			publishGoodsList(clientSender, clientSession);
-		} else {
-			buyResponse = new BuyResponseDTO(SellResult.DENIED, accountNumber, 0);
 		}
 
 		/* Step 3: send reply message */
