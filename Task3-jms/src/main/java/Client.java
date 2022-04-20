@@ -645,24 +645,15 @@ public class Client {
 						// includes: goods name (g.name)
 						// send reply (destination is buyerDest)
 						saleResponse = new SaleResponseDTO(SellResult.CONFIRMED, "Request confirmed!", g.name);
-						// sendSaleResponse(new SaleResponseDTO(SellResult.CONFIRMED, "Request confirmed!", g.name), buyerDest); TODO: remove
 					} else {
 						// If the buyer did not pay enough money we canceled reservation and keep money for simplicity
 						putGoodsOnAvailableList(g);
 						saleResponse = new SaleResponseDTO(SellResult.CANCELED, "Request canceled, did not pay enough!", g.name);
-					/*sendSaleResponse(
-							new SaleResponseDTO(SellResult.CANCELED, "Request canceled, did not pay enough!", g.name),
-							buyerDest
-					); TODO: Remove*/
 					}
 				} else if (cmd == Bank.REPORT_TYPE_CANCELED) {
 					// unsuccessful bank transaction
 					putGoodsOnAvailableList(g);
 					saleResponse = new SaleResponseDTO(SellResult.CANCELED, "Bank transaction canceled!", g.name);
-				/*sendSaleResponse(
-						new SaleResponseDTO(SellResult.CANCELED, "Bank transaction canceled!", g.name),
-						buyerDest
-				); TODO: Remove*/
 				} else {
 					System.out.println("Received unknown MapMessage:\n: " + msg);
 				}
