@@ -22,8 +22,8 @@ public class Client {
 	public Client(String userName) {
 		this.userName = userName;
 		// Connect to the Hazelcast cluster
-		// ClientConfig config = new ClientConfig();
-		// hazelcast = HazelcastClient.newHazelcastClient(config);
+		ClientConfig config = new ClientConfig();
+		hazelcast = HazelcastClient.newHazelcastClient(config);
 	}
 
 	/**
@@ -31,7 +31,7 @@ public class Client {
 	 */
 	public void disconnect() {
 		// Disconnect from the Hazelcast cluster
-		// hazelcast.shutdown();
+		hazelcast.shutdown();
 	}
 
 	/**
