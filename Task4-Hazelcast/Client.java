@@ -148,8 +148,30 @@ public class Client {
 		System.out.println("Enter comment text:");
 		String commentText = in.readLine();
 
-		// TODO: Add the comment to the list of comments of the selected document
-		// System.out.printf("Added a comment about %s.%n", selectedDocumentName);
+		// Load user
+		loadUser(userName);
+		// Get selected doc name
+		String selectedDocumentName = getSelectedDoc(userName);
+
+
+		if (selectedDocumentName == null) {
+			System.out.println("No document selected!");
+		}
+
+		// Done TODO: Add the comment to the list of comments of the selected document
+		IMap<String, DocumentInformation> docInfoMap = hazelcast.getMap("DocumentsInfo");
+
+		docInfoMap.executeOnKey(selectedDocumentName, (data) -> {
+			DocumentInformation docInfo = data.getValue();
+			// Add comment to the document information
+			docInfo.addComment(commentText);
+			// Save updated doc info
+			data.setValue(docInfo);
+
+			return docInfo;
+		});
+
+		System.out.printf("Added a comment about %s.%n", selectedDocumentName);
 	}
 
 	/*
