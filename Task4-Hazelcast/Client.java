@@ -6,6 +6,7 @@ import com.hazelcast.map.IMap;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.LineNumberReader;
+import java.util.List;
 
 public class Client {
 	// Reader for user input
@@ -119,14 +120,26 @@ public class Client {
 	 * Show the view count and comments of the current selected document.
 	 */
 	private void infoCommand(){
-		// TODO: Get the view count and list of comments of the selected document
+		// Done TODO: Get the view count and list of comments of the selected document
+		// Load user
+		loadUser(userName);
+		// Get selected doc name
+		String selectedDocumentName = getSelectedDoc(userName);
+
+		if (selectedDocumentName == null) {
+			System.out.println("No document selected!");
+		}
+
+		DocumentInformation docInfo = loadDocInfo(selectedDocumentName);
+		int viewCount = docInfo.getViews();
+		List<String> comments = docInfo.getComments();
 
 		// Print the information
-		// System.out.printf("Info about %s:%n", selectedDocumentName);
-		// System.out.printf("Viewed %d times.%n", viewCount);
-		// System.out.printf("Comments (%d):%n", comments.size());
-		// for(String comment: comments)
-		// 	System.out.println(comment);
+		 System.out.printf("Info about %s:%n", selectedDocumentName);
+		 System.out.printf("Viewed %d times.%n", viewCount);
+		 System.out.printf("Comments (%d):%n", comments.size());
+		 for(String comment: comments)
+		 	System.out.println(comment);
 	}
 	/**
 	 * Add a comment about the current selected document.
@@ -191,10 +204,10 @@ public class Client {
 	}
 
 	private void incrementViewCount(String docName) {
-		IMap<String, DocumentsInformation> docInfoMap = hazelcast.getMap("DocumentsInfo");
+		IMap<String, DocumentInformation> docInfoMap = hazelcast.getMap("DocumentsInfo");
 
 		docInfoMap.executeOnKey(docName, (data) -> {
-			DocumentsInformation docInfo = data.getValue();
+			DocumentInformation docInfo = data.getValue();
 			// Increment views
 			docInfo.incView();
 			// Save updated doc info
@@ -204,15 +217,15 @@ public class Client {
 		});
 	}
 
-	private DocumentsInformation loadDocInfo(String docName) {
-		IMap<String, DocumentsInformation> docInfoMap = hazelcast.getMap("DocumentsInfo");
+	private DocumentInformation loadDocInfo(String docName) {
+		IMap<String, DocumentInformation> docInfoMap = hazelcast.getMap("DocumentsInfo");
 
 		return docInfoMap.executeOnKey(docName, (data) -> {
-			DocumentsInformation docInfo = data.getValue();
+			DocumentInformation docInfo = data.getValue();
 
 			// If there is no doc info yet create new one
 			if (docInfo == null) {
-				docInfo = new DocumentsInformation(docName);
+				docInfo = new DocumentInformation(docName);
 				data.setValue(docInfo);
 			}
 
@@ -249,6 +262,16 @@ public class Client {
 			data.setValue(user);
 
 			return user;
+		});
+	}
+
+	private String getSelectedDoc(String userName) {
+		IMap<String, User> usersMap = hazelcast.getMap("Users");
+
+		return usersMap.executeOnKey(userName, (data) -> {
+			User user = data.getValue();
+
+			return user.getSelectedDocument();
 		});
 	}
 

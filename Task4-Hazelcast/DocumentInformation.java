@@ -1,13 +1,15 @@
 import java.io.Serializable;
+import java.util.ArrayList;
 import java.util.List;
 
-public class DocumentsInformation implements Serializable {
+public class DocumentInformation implements Serializable {
     private String docKey;
     private int views = 0;
     private List<String> comments;
 
-    public DocumentsInformation(String docKey) {
+    public DocumentInformation(String docKey) {
         this.docKey = docKey;
+        this.comments = new ArrayList<>();
     }
 
     public int getViews() {
