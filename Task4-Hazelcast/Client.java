@@ -46,7 +46,7 @@ public class Client {
 
 		// Currently, the document is generated directly on the client
 		// Done TODO: change it, so that the document is generated in the cluster and cached
-		IMap<String, String> documentsMap = hazelcast.getMap("Documents");
+		IMap<String, Document> documentsMap = hazelcast.getMap("Documents");
 		// Init the doc info
 		loadDocInfo(documentName);
 		// Load document
@@ -191,7 +191,7 @@ public class Client {
 	}
 
 	private void incrementViewCount(String docName) {
-		IMap<String, String> docInfoMap = hazelcast.getMap("DocumentsInfo");
+		IMap<String, DocumentsInformation> docInfoMap = hazelcast.getMap("DocumentsInfo");
 
 		docInfoMap.executeOnKey(docName, (data) -> {
 			DocumentsInformation docInfo = data.getValue();
@@ -205,7 +205,7 @@ public class Client {
 	}
 
 	private DocumentsInformation loadDocInfo(String docName) {
-		IMap<String, String> docInfoMap = hazelcast.getMap("DocumentsInfo");
+		IMap<String, DocumentsInformation> docInfoMap = hazelcast.getMap("DocumentsInfo");
 
 		return docInfoMap.executeOnKey(docName, (data) -> {
 			DocumentsInformation docInfo = data.getValue();
@@ -221,7 +221,7 @@ public class Client {
 	}
 
 	private User loadUser(String userName) {
-		IMap<String, String> usersMap = hazelcast.getMap("Users");
+		IMap<String, User> usersMap = hazelcast.getMap("Users");
 
 		return usersMap.executeOnKey(userName, (data) -> {
 			User user = data.getValue();
@@ -236,8 +236,8 @@ public class Client {
 		});
 	}
 
-	private void setSelectedDoc(String userName, Strign docName) {
-		IMap<String, String> usersMap = hazelcast.getMap("Users");
+	private void setSelectedDoc(String userName, String docName) {
+		IMap<String, User> usersMap = hazelcast.getMap("Users");
 
 		usersMap.executeOnKey(userName, (data) -> {
 			User user = data.getValue();
