@@ -1,3 +1,3 @@
 #!/bin/sh
 source setenv.sh
-java -Dhazelcast.socket.bind.any=false ExampleMember "$@"
+java -Dhazelcast.socket.bind.any=false TaskleMember "$@"
