@@ -1,6 +1,7 @@
+import java.io.Serializable;
 import java.util.List;
 
-public class User {
+public class User implements Serializable {
     private String userName;
     private String selectedDocument;
     private List<String> favoritesDocs;

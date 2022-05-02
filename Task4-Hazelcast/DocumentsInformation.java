@@ -1,6 +1,7 @@
+import java.io.Serializable;
 import java.util.List;
 
-public class DocumentsInformation {
+public class DocumentsInformation implements Serializable {
     private String docKey;
     private int views = 0;
     private List<String> comments;
