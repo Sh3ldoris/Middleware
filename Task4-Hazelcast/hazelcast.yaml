@@ -15,5 +15,6 @@ hazelcast:
                 members:
                     127.0.0.1:5701
     map:
-        Documents: { }
-        Users: { }
+        Documents: {}
+        DocumentsInfo: {}
+        Users: {}

@@ -1,6 +1,7 @@
 import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.map.IMap;
 
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -44,12 +45,32 @@ public class Client {
 		String documentName = in.readLine();
 
 		// Currently, the document is generated directly on the client
-		// TODO: change it, so that the document is generated in the cluster and cached
-		Document document = DocumentGenerator.generateDocument(documentName);
+		// Done TODO: change it, so that the document is generated in the cluster and cached
+		IMap<String, String> documentsMap = hazelcast.getMap("Documents");
+		// Init the doc info
+		loadDocInfo(documentName);
+		// Load document
+		Document document = documentsMap.executeOnKey(documentName, (data) -> {
+			Document doc = data.getValue();
 
-		// TODO: Set the current selected document for the user
-		// TODO: Get the document (from the cache, or generated)
-		// TODO: Increment the view count
+			// If there is no doc yet create one
+			if (doc == null) {
+				doc = DocumentGenerator.generateDocument(documentName);
+				data.setValue(doc);
+			}
+
+			return doc;
+		});
+
+		// Done TODO: Set the current selected document for the user
+		// Load user
+		loadUser(userName);
+		// Set current doc
+		setSelectedDoc(userName, documentName);
+
+		// Done TODO: Get the document (from the cache, or generated)
+		// Done TODO: Increment the view count
+		incrementViewCount(documentName);
 
 		// Show the document content
 		System.out.println("The document is:");
@@ -167,6 +188,68 @@ public class Client {
 					break;
 			}
 		}
+	}
+
+	private void incrementViewCount(String docName) {
+		IMap<String, String> docInfoMap = hazelcast.getMap("DocumentsInfo");
+
+		docInfoMap.executeOnKey(docName, (data) -> {
+			DocumentsInformation docInfo = data.getValue();
+			// Increment views
+			docInfo.incView();
+			// Save updated doc info
+			data.setValue(docInfo);
+
+			return docInfo;
+		});
+	}
+
+	private DocumentsInformation loadDocInfo(String docName) {
+		IMap<String, String> docInfoMap = hazelcast.getMap("DocumentsInfo");
+
+		return docInfoMap.executeOnKey(docName, (data) -> {
+			DocumentsInformation docInfo = data.getValue();
+
+			// If there is no doc info yet create new one
+			if (docInfo == null) {
+				docInfo = new DocumentsInformation(docName);
+				data.setValue(docInfo);
+			}
+
+			return docInfo;
+		});
+	}
+
+	private User loadUser(String userName) {
+		IMap<String, String> usersMap = hazelcast.getMap("Users");
+
+		return usersMap.executeOnKey(userName, (data) -> {
+			User user = data.getValue();
+
+			// If there is no doc info yet create new one
+			if (user == null) {
+				user = new User(userName);
+				data.setValue(user);
+			}
+
+			return user;
+		});
+	}
+
+	private void setSelectedDoc(String userName, Strign docName) {
+		IMap<String, String> usersMap = hazelcast.getMap("Users");
+
+		usersMap.executeOnKey(userName, (data) -> {
+			User user = data.getValue();
+
+			// Set selected doc name
+			user.setSelectedDocument(docName);
+
+			// Save updated user
+			data.setValue(user);
+
+			return user;
+		});
 	}
 
 	/*
