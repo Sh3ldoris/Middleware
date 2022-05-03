@@ -45,11 +45,12 @@ public class Client {
 		System.out.println("Enter document name:");
 		String documentName = in.readLine();
 
+		// Init the doc info
+		loadDocInfo(documentName);
+
 		// Currently, the document is generated directly on the client
 		// Done TODO: change it, so that the document is generated in the cluster and cached
 		IMap<String, Document> documentsMap = hazelcast.getMap("Documents");
-		// Init the doc info
-		loadDocInfo(documentName);
 		// Load document
 		Document document = documentsMap.executeOnKey(documentName, (data) -> {
 			Document doc = data.getValue();
@@ -85,7 +86,56 @@ public class Client {
 	 */
 	private void nextFavoriteCommand() {
 		// TODO: Select the next document form the list of favorites
+
+		// Load user
+		loadUser(userName);
+
+		IMap<String, User> usersMap = hazelcast.getMap("Users");
+
+		String selectedDocumentName = usersMap.executeOnKey(userName, (data) -> {
+			User user = data.getValue();
+
+			String selectedDoc = user.getNextFavoriteDoc();
+			// Save updated user
+			data.setValue(user);
+			if (selectedDoc == null) {
+				System.out.println("No favorite documents saved!");
+			}
+
+			return selectedDoc;
+		});
+
+		if (selectedDocumentName == null)
+			return;
+
 		// TODO: Increment the view count, get the document (from the cache, or generated) and show the document content
+
+		// Init the doc info
+		loadDocInfo(selectedDocumentName);
+
+		// Get the document itself
+		IMap<String, Document> documentsMap = hazelcast.getMap("Documents");
+		// Load document
+		Document document = documentsMap.executeOnKey(selectedDocumentName, (data) -> {
+			Document doc = data.getValue();
+
+			// If there is no doc yet create one
+			if (doc == null) {
+				doc = DocumentGenerator.generateDocument(selectedDocumentName);
+				data.setValue(doc);
+			}
+
+			return doc;
+		});
+
+		// Load user
+		loadUser(userName);
+		// Set current doc
+		setSelectedDoc(userName, selectedDocumentName);
+
+		// Show the document content
+		System.out.println("The document is:");
+		System.out.println(document.getContent());
 	}
 
 	/**
@@ -93,27 +143,89 @@ public class Client {
 	 * If the list already contains the document name, do nothing.
 	 */
 	private void addFavoriteCommand() {
-		// TODO: Add the name of the selected document to the list of favorites
-		// System.out.printf("Added %s to favorites%n", selectedDocumentName);
+		// Done TODO: Add the name of the selected document to the list of favorites
+
+		// Load user
+		loadUser(userName);
+
+		IMap<String, User> usersMap = hazelcast.getMap("Users");
+
+		String selectedDocumentName = usersMap.executeOnKey(userName, (data) -> {
+			User user = data.getValue();
+
+			String selectedDoc = user.getSelectedDocument();
+			if (selectedDoc == null) {
+				System.out.println("No document selected!");
+			} else {
+				// Add doc name to the favorites
+				user.addFavoriteDoc(selectedDoc);
+				// Save updated user
+				data.setValue(user);
+			}
+
+			return selectedDoc;
+		});
+
+		if (selectedDocumentName == null)
+			return;
+
+		System.out.printf("Added %s to favorites%n", selectedDocumentName);
 	}
 	/**
 	 * Remove the current selected document name from the list of favorite documents of the user.
 	 * If the list does not contain the document name, do nothing.
 	 */
 	private void removeFavoriteCommand(){
-		// TODO: Remove the name of the selected document from the list of favorites
-		// System.out.printf("Removed %s from favorites%n", selectedDocumentName);
+		// Done TODO: Remove the name of the selected document from the list of favorites
+
+		// Load user
+		loadUser(userName);
+
+		IMap<String, User> usersMap = hazelcast.getMap("Users");
+
+		String selectedDocumentName = usersMap.executeOnKey(userName, (data) -> {
+			User user = data.getValue();
+
+			String selectedDoc = user.getSelectedDocument();
+			if (selectedDoc == null) {
+				System.out.println("No document selected!");
+			} else {
+				// Remove doc name from the favorites
+				user.removeFavoriteDoc(selectedDoc);
+				// Save updated user
+				data.setValue(user);
+			}
+
+			return selectedDoc;
+		});
+
+		if (selectedDocumentName == null)
+			return;
+
+		System.out.printf("Removed %s from favorites%n", selectedDocumentName);
 	}
 	/**
-	 * Add the current selected document name to the list of favorite documents of the user.
-	 * If the list already contains the document name, do nothing.
+	 * List user's favorite documents
 	 */
 	private void listFavoritesCommand() {
-		// TODO: Get the list of favorite documents of the user
+		// Done TODO: Get the list of favorite documents of the user
+
+		// Load user
+		loadUser(userName);
+
+		IMap<String, User> usersMap = hazelcast.getMap("Users");
+
+		List<String> favoriteList = usersMap.executeOnKey(userName, (data) -> {
+			User user = data.getValue();
+
+			// Remove doc name from the favorites
+			return user.getFavoritesDocs();
+		});
+
 		// Print the list of favorite documents
-		// System.out.println("Your list of favorite documents:");
-		// for(String favoriteDocumentName: favoriteList)
-		//	System.out.println(favoriteDocumentName);
+		System.out.println("Your list of favorite documents:");
+		for(String favoriteDocumentName: favoriteList)
+			System.out.println(favoriteDocumentName);
 	}
 
 	/**
@@ -121,13 +233,12 @@ public class Client {
 	 */
 	private void infoCommand(){
 		// Done TODO: Get the view count and list of comments of the selected document
-		// Load user
-		loadUser(userName);
-		// Get selected doc name
-		String selectedDocumentName = getSelectedDoc(userName);
+
+		String selectedDocumentName = loadUserAndGetSelectedDocName();
 
 		if (selectedDocumentName == null) {
 			System.out.println("No document selected!");
+			return;
 		}
 
 		DocumentInformation docInfo = loadDocInfo(selectedDocumentName);
@@ -148,14 +259,11 @@ public class Client {
 		System.out.println("Enter comment text:");
 		String commentText = in.readLine();
 
-		// Load user
-		loadUser(userName);
-		// Get selected doc name
-		String selectedDocumentName = getSelectedDoc(userName);
-
+		String selectedDocumentName = loadUserAndGetSelectedDocName();
 
 		if (selectedDocumentName == null) {
 			System.out.println("No document selected!");
+			return;
 		}
 
 		// Done TODO: Add the comment to the list of comments of the selected document
@@ -295,6 +403,13 @@ public class Client {
 
 			return user.getSelectedDocument();
 		});
+	}
+
+	private String loadUserAndGetSelectedDocName() {
+		// Load user
+		loadUser(userName);
+		// Get selected doc name
+		return getSelectedDoc(userName);
 	}
 
 	/*
