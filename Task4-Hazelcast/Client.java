@@ -154,7 +154,7 @@ public class Client {
 			User user = data.getValue();
 
 			String selectedDoc = user.getSelectedDocument();
-			if (selectedDoc == null) {
+			if (selectedDoc == null || selectedDoc.equals("")) {
 				System.out.println("No document selected!");
 			} else {
 				// Add doc name to the favorites
