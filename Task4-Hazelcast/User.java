@@ -31,7 +31,9 @@ public class User implements Serializable {
     }
 
     public void addFavoriteDoc(String docName) {
-        this.favoritesDocs.add(docName);
+        if (!favoritesDocs.contains(docName)) {
+            favoritesDocs.add(docName);
+        }
     }
 
     public void removeFavoriteDoc(String docName) {

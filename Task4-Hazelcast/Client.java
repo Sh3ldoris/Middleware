@@ -50,19 +50,7 @@ public class Client {
 
 		// Currently, the document is generated directly on the client
 		// Done TODO: change it, so that the document is generated in the cluster and cached
-		IMap<String, Document> documentsMap = hazelcast.getMap("Documents");
-		// Load document
-		Document document = documentsMap.executeOnKey(documentName, (data) -> {
-			Document doc = data.getValue();
-
-			// If there is no doc yet create one
-			if (doc == null) {
-				doc = DocumentGenerator.generateDocument(documentName);
-				data.setValue(doc);
-			}
-
-			return doc;
-		});
+		Document document = loadDocument(documentName);
 
 		// Done TODO: Set the current selected document for the user
 		// Load user
@@ -96,17 +84,19 @@ public class Client {
 			User user = data.getValue();
 
 			String selectedDoc = user.getNextFavoriteDoc();
+			if (selectedDoc != null) {
+				user.setSelectedDocument(selectedDoc);
+			}
 			// Save updated user
 			data.setValue(user);
-			if (selectedDoc == null) {
-				System.out.println("No favorite documents saved!");
-			}
 
 			return selectedDoc;
 		});
 
-		if (selectedDocumentName == null)
+		if (selectedDocumentName == null) {
+			System.out.println("No favorite documents saved!");
 			return;
+		}
 
 		// TODO: Increment the view count, get the document (from the cache, or generated) and show the document content
 
@@ -114,24 +104,8 @@ public class Client {
 		loadDocInfo(selectedDocumentName);
 
 		// Get the document itself
-		IMap<String, Document> documentsMap = hazelcast.getMap("Documents");
-		// Load document
-		Document document = documentsMap.executeOnKey(selectedDocumentName, (data) -> {
-			Document doc = data.getValue();
-
-			// If there is no doc yet create one
-			if (doc == null) {
-				doc = DocumentGenerator.generateDocument(selectedDocumentName);
-				data.setValue(doc);
-			}
-
-			return doc;
-		});
-
-		// Load user
-		loadUser(userName);
-		// Set current doc
-		setSelectedDoc(userName, selectedDocumentName);
+		Document document = loadDocument(selectedDocumentName);
+		incrementViewCount(selectedDocumentName);
 
 		// Show the document content
 		System.out.println("The document is:");
@@ -154,11 +128,7 @@ public class Client {
 			User user = data.getValue();
 
 			String selectedDoc = user.getSelectedDocument();
-			System.out.println("Selcted doc is: " + selectedDoc);
-			if (selectedDoc == null || selectedDoc.equals("")) {
-				System.out.println("No document selected!");
-			} else {
-				System.out.println("Adding to favorites!");
+			if (selectedDoc != null) {
 				// Add doc name to the favorites
 				user.addFavoriteDoc(selectedDoc);
 				// Save updated user
@@ -168,8 +138,10 @@ public class Client {
 			return selectedDoc;
 		});
 
-		if (selectedDocumentName == null)
+		if (selectedDocumentName == null) {
+			System.out.println("No document selected!");
 			return;
+		}
 
 		System.out.printf("Added %s to favorites%n", selectedDocumentName);
 	}
@@ -189,9 +161,7 @@ public class Client {
 			User user = data.getValue();
 
 			String selectedDoc = user.getSelectedDocument();
-			if (selectedDoc == null) {
-				System.out.println("No document selected!");
-			} else {
+			if (selectedDoc != null) {
 				// Remove doc name from the favorites
 				user.removeFavoriteDoc(selectedDoc);
 				// Save updated user
@@ -201,8 +171,10 @@ public class Client {
 			return selectedDoc;
 		});
 
-		if (selectedDocumentName == null)
+		if (selectedDocumentName == null) {
+			System.out.println("No document selected!");
 			return;
+		}
 
 		System.out.printf("Removed %s from favorites%n", selectedDocumentName);
 	}
@@ -412,6 +384,23 @@ public class Client {
 		loadUser(userName);
 		// Get selected doc name
 		return getSelectedDoc(userName);
+	}
+
+	private Document loadDocument(String docName) {
+		// Get the document itself
+		IMap<String, Document> documentsMap = hazelcast.getMap("Documents");
+		// Load document
+		return documentsMap.executeOnKey(docName, (data) -> {
+			Document doc = data.getValue();
+
+			// If there is no doc yet create one
+			if (doc == null) {
+				doc = DocumentGenerator.generateDocument(docName);
+				data.setValue(doc);
+			}
+
+			return doc;
+		});
 	}
 
 	/*
