@@ -154,9 +154,11 @@ public class Client {
 			User user = data.getValue();
 
 			String selectedDoc = user.getSelectedDocument();
+			System.out.println("Selcted doc is: " + selectedDoc);
 			if (selectedDoc == null || selectedDoc.equals("")) {
 				System.out.println("No document selected!");
 			} else {
+				System.out.println("Adding to favorites!");
 				// Add doc name to the favorites
 				user.addFavoriteDoc(selectedDoc);
 				// Save updated user
