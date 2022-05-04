@@ -398,7 +398,6 @@ public class Client {
 
 			// If there is no doc yet create one
 			if (doc == null) {
-				loggingCounter++;
 				doc = DocumentGenerator.generateDocument(docName);
 				data.setValue(doc);
 			}
