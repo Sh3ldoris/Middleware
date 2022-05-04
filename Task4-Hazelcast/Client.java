@@ -17,6 +17,8 @@ public class Client {
 	private String userName;
 	// Do not keep any other state here - all data should be in the cluster
 
+	private int loggingCounter = 0;
+
 	/**
 	 * Create a client for the specified user.
 	 * @param userName user name used to identify the user
@@ -51,6 +53,7 @@ public class Client {
 		// Currently, the document is generated directly on the client
 		// Done TODO: change it, so that the document is generated in the cluster and cached
 		Document document = loadDocument(documentName);
+		System.out.println("Created docs -> " + loggingCounter + " times");
 
 		// Done TODO: Set the current selected document for the user
 		// Load user
@@ -395,6 +398,7 @@ public class Client {
 
 			// If there is no doc yet create one
 			if (doc == null) {
+				loggingCounter++;
 				doc = DocumentGenerator.generateDocument(docName);
 				data.setValue(doc);
 			}

@@ -15,6 +15,8 @@ hazelcast:
                 members:
                     127.0.0.1:5701
     map:
-        Documents: {}
+        Documents: {
+            max-idle-seconds: 20
+        }
         DocumentsInfo: {}
         Users: {}
