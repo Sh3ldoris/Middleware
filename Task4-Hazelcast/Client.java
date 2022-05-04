@@ -51,7 +51,6 @@ public class Client {
 		// Currently, the document is generated directly on the client
 		// Done TODO: change it, so that the document is generated in the cluster and cached
 		Document document = loadDocument(documentName);
-		System.out.println("Created docs -> " + loggingCounter + " times");
 
 		// Done TODO: Set the current selected document for the user
 		// Load user
