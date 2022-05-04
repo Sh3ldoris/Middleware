@@ -17,8 +17,6 @@ public class Client {
 	private String userName;
 	// Do not keep any other state here - all data should be in the cluster
 
-	private int loggingCounter = 0;
-
 	/**
 	 * Create a client for the specified user.
 	 * @param userName user name used to identify the user

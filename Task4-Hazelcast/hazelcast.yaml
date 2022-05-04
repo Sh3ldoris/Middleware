@@ -15,8 +15,10 @@ hazelcast:
                 members:
                     127.0.0.1:5701
     map:
-        Documents: {
-            max-idle-seconds: 20
-        }
+        Documents:
+            max-idle-seconds: 300
+            eviction:
+                eviction-policy: LRU
+                size: 20000
         DocumentsInfo: {}
         Users: {}
