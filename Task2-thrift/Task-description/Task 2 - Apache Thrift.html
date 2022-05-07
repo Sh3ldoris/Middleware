@@ -1,0 +1,199 @@
+
+<!-- saved from url=(0078)https://d3s.mff.cuni.cz/files/teaching/nswi080/labs/Files/task-2thrift-en.html -->
+<html><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8"><title>Task 2 - Apache Thrift</title><link rel="stylesheet" href="./Task 2 - Apache Thrift_files/common.css" type="text/css"><style type="text/css">body{
+    font: 10pt sans-serif;
+}
+table, td{
+    border: 1px solid silver;
+    border-collapse: collapse;
+}
+code{
+    background-color: #eee;
+}
+em{
+    background-color: #ffc;
+}</style></head><body data-new-gr-c-s-check-loaded="14.1058.0" data-gr-ext-installed=""><h1>Task 2 - Apache Thrift</h1>
+<p>This task is about cross-language communication using remote procedure calls (RPC), using Apache Thrift.
+Implement a simple client-server application which will use given a communication protocol. The protocol is based on a given language-independent interface description in Thrift IDL.
+Then, extend the protocol while maintaining full run-time compatibility.</p>
+<h2>Preparation</h2>
+<p>Download the input source code <a href="https://d3s.mff.cuni.cz/legacy/files/teaching/nswi080/labs/Files/sources-2.zip">https://d3s.mff.cuni.cz/legacy/files/teaching/nswi080/labs/Files/sources-2.zip</a> .
+Install Apache Thrift and try the example <a href="https://d3s.mff.cuni.cz/legacy/files/teaching/nswi080/labs/Files/lab-2thrift-en.html">https://d3s.mff.cuni.cz/legacy/files/teaching/nswi080/labs/Files/lab-2thrift-en.html</a> .
+We will use C++ to implement the server. Choose a different programming language supported by Thrift for implementing the client.</p>
+<p>The task requires understanding of the following:</p>
+<ul>
+<li>Mapping of Thrift IDL features to constructs of the target programming language.
+<ul>
+<li>This mapping may not be fully documented in Thrift's documentation. You may run the Thrift compiler on the provided IDL file, and explore the generated code in the target language. If still unclear, ask on our mailing list.</li>
+</ul>
+</li>
+<li>Implementation of a server for a thrift service using a simple IO stack, with a binary protocol, multiplex, and using a processor factory to create a separate handler for each client.</li>
+<li>Connecting to the running server and calling methods of a service.</li>
+</ul>
+<h2>Application</h2>
+<p>The application that will be implemented does not perform any meaningful task, it is designed to merely show working with various data types using cross-language RPC.</p>
+<p>The main idea is that the client logs in to the server, then lets the server perform a search for some items.
+The result of the search is a list of items, which are returned to the client one by one.
+The client generates a summary based on the items and saves it on the server.</p>
+<p>Because the focus of this task is just the communication not an actual functionality of the application, we will work with just random data without any meaning.</p>
+<h3>Communication</h3>
+<p>The client and server should communicate like this:</p>
+<ol>
+<li><strong>The client logs in</strong>
+<ul>
+<li>Client calls method <code>logIn</code> of a <code>Login</code> service, with a user name an integer key.</li>
+<li>The server checks the validity of the key, and if the key does not match, throws an <code>InvalidKeyEception</code>, which will contain the correct key.</li>
+<li>The client calls <code>logIn</code> again, now with the correct key.</li>
+</ul>
+</li>
+<li><strong>Searching for items</strong>
+<ul>
+<li>In the basic version, the server only supports searching for items of type <code>ItemA</code> and fetching them one by one.</li>
+<li>The client repeatedly calls <code>fetch</code> to fetch the items.
+<ul>
+<li>The returned <code>FetchResult</code> either contains an item from the result, or indicates why no item was returned.
+<ul>
+<li>If the <code>state</code> field of <code>FetchResult</code> is <code>ENDED</code>, then no item was returned, because there are no more items (all were already fetched).</li>
+<li>If the <code>state</code> field of <code>FetchResult</code> is <code>PENDING</code>, then no item was returned, because the server is still searching for items and does not currently have any items to return.
+<ul>
+<li>In this case, the client should wait for a bit and try again.</li>
+</ul>
+</li>
+<li>If the <code>state</code> field of <code>FetchResult</code> is <code>ITEMS</code>, then the <code>item</code> field contains an item.</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li><strong>Creating a summary</strong>
+<ul>
+<li>A "summary" in this case will be a multimap-like collection, represented as a map form a string to a set of strings.
+<ul>
+<li>The keys in the map will be the names of fields in the item types, such as <code>"fieldX"</code>, <code>"fieldY"</code>, etc.</li>
+<li>The sets will contain all values of that field across all the items.</li>
+</ul>
+</li>
+<li>The client collects all field values from all the fetched items into the multimap.
+<ul>
+<li>The values of all the fields should be converted to strings. If the field is a collection, then the values should be comma-separated.</li>
+</ul>
+</li>
+<li>The client saves the summary on the server using <code>saveSummary</code> in <code>Reports</code>.</li>
+<li>The server verifies that the summary is accurate and indicates that by a boolean return value.</li>
+</ul>
+</li>
+<li><strong>The client logs out</strong>
+<ul>
+<li>The client calls <code>logOut</code>.</li>
+</ul>
+</li>
+</ol>
+<h2>Your tasks are</h2>
+<h3>1. Implement the Client</h3>
+<p>Implement a client which will communicate with the server using the protocol defined by the IDL file and the description above.</p>
+<ul>
+<li>Use a programming language of your choice.</li>
+<li>The name used to log in and the query string may be command-line options of the program.</li>
+<li>The rest of what the client does will depend on what the server returns.</li>
+<li>In each step, print a message to standard output to show the progress of the application.</li>
+</ul>
+<h4>Connect to Server</h4>
+<p>Test that the client works with our server at <code>lab.d3s.mff.cuni.cz:5001</code>.</p>
+<ul>
+<li>There are 3 services in multiplex, named <code>Login</code>, <code>Search</code> and <code>Reports</code>.</li>
+<li>The transport and protocol stack is the same as in the lab example (multiplex over a binary protocol).</li>
+<li>Choose a unique name for login.</li>
+</ul>
+<h3>2. Implement the Server</h3>
+<p>Implement the server side of the application in C++.</p>
+<ul>
+<li>For the expected key in <code>login</code>, you may use a random value per connection, or some hash of the user name.</li>
+<li>For generating random data, you can use code in the file <code>database.hpp</code>. (Note: The database generates multiple types of items, to be used in the next part of the assignment. In the basic version of the server, we are only interested in items of type "ItemA".)</li>
+<li>Sometimes, return status <code>PENDING</code> from <code>fetch</code> to simulate a long-running search.</li>
+<li>In <code>saveSummary</code>, check that the summary is correct - you can use code in the file <code>summary.hpp</code> to generate the expected summary and compare it with the client-provided summary.</li>
+<li>In all methods, if the client passes invalid arguments or calls methods in a wrong order (for example, fetching items while not logged in), throw a <code>ProtocolException</code>.</li>
+<li>The Thrift IDL compiler, in addition to the files required for compilation, generates an empty skeleton implementation for each service. You can use parts of this code as the basis for your implementation.</li>
+</ul>
+<h3>3. Protocol update</h3>
+<p>An important feature of Thrift and its IDL is the ability to evolve the interface while keeping compatibility.
+For example, new fields can be added to user-defined types, fields which are not <code>required</code> may be removed, function parameters may be added, etc.</p>
+<p>The client and server may use different definition of a type or a function.</p>
+<ul>
+<li>Fields are matched by their id (field names are not important). As long as matching fields have the same types on both sides, communication is possible.</li>
+<li>A field which is not declared as required, may be missing on one side.</li>
+<li>A function parameter with a default value may be missing on the caller side.</li>
+<li>If a function is called with more parameters than it receives, the additional parameters are ignored.</li>
+</ul>
+<h4>New features</h4>
+<ol>
+<li>Extend the interface with new types of an items (<code>ItemB</code>, <code>ItemC</code>) in addition to <code>ItemA</code>. The C++ variants of these types are in <code>items.hpp</code>.
+<ul>
+<li>Now we can search for multiple types of items, where the search result can be a mix of different item types.</li>
+</ul>
+</li>
+<li>Modify the <code>Search</code> service in some way to allow the client to initiate a search, specifying:
+<ul>
+<li>which types of items to search for,</li>
+<li>limit on maximum number of items to search for.</li>
+</ul>
+</li>
+<li>Modify the <code>Search</code> service in some way to allow fetching multiple items at once.
+<ul>
+<li>The client decides the number of items to be fetched.</li>
+</ul>
+</li>
+<li>Update the implementation of the server to support these new features.</li>
+<li>Update the implementation of the client to support these new features.
+<ul>
+<li>Let the client specify on the command line: the set of types of items to search for, the search limit and the number of items fetched at a time.</li>
+</ul>
+</li>
+</ol>
+<ul>
+<li>The update client should be compatible with the old server and the updated server should be compatible with the old client. (All four possible combinations should work, but the new functionality can be used only when both sides are updated.)</li>
+</ul>
+<h2>Instructions</h2>
+<ul>
+<li>
+<p>Submit by e-mail, a zip file containing:</p>
+<ul>
+<li>Source code of the basic client, including build scripts if necessary.</li>
+<li>Source code of the basic server, including build scripts.</li>
+<li>The updated Thrift IDL file.</li>
+<li>Source code of the exteded client, including build scripts if necessary.</li>
+<li>Source code of the exteded server, including build scripts.</li>
+</ul>
+</li>
+<li>
+<p>You must use the provided interface file and modify it only as described.</p>
+</li>
+<li>
+<p>You may use the provided C++ code an modify it as you wish.</p>
+</li>
+<li>
+<p>The server must be able to serve multiple clients at the same time without interference.</p>
+</li>
+<li>
+<p>Do not crash or leak memory, perform undefined behavior, race conditions (if multiple threads access shared mutable data, the accesses must be synchronized, for example using a mutex lock).</p>
+</li>
+<li>
+<p>Properly handle exceptions (do not crash or terminate just because the other side does not follow the protocol, etc.).</p>
+</li>
+<li>
+<p>Keep the implementation simple.</p>
+</li>
+<li>
+<p>It should be easy to build and run (preferrably should work on the computers in the school labs).</p>
+</li>
+<li>
+<p>You may use parts of the example codes and scripts.</p>
+</li>
+<li>
+<p>If you are using git to keep track of different versions, do not submit your git history - all parts of the solution should accessible directly as files.</p>
+</li>
+<li>
+<p>If something is unclear, ask on the mailing list.</p>
+</li>
+</ul>
+</body><grammarly-desktop-integration data-grammarly-shadow-root="true"></grammarly-desktop-integration></html>
