@@ -1,0 +1,11 @@
+@media print {
+  @page {
+    margin: 1cm 1cm 2cm 1cm; }
+  body {
+    font: 12pt serif; } }
+
+.highlight svg {
+  dsiplay: none; }
+
+.token.keyword {
+  font-weight: bold; }

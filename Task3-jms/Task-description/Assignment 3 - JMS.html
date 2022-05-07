@@ -1,0 +1,310 @@
+
+<!-- saved from url=(0072)https://d3s.mff.cuni.cz/files/teaching/nswi080/labs/Files/task-3-en.html -->
+<html><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8"><title>Assignment 3 - JMS</title><link rel="stylesheet" href="./Assignment 3 - JMS_files/common.css" type="text/css"><style type="text/css">body{
+    font: 10pt sans-serif;
+}
+table, td{
+    border: 1px solid silver;
+    border-collapse: collapse;
+}
+code{
+    background-color: #eee;
+}
+em{
+    background-color: #ffc;
+}</style></head><body data-new-gr-c-s-check-loaded="14.1058.0" data-gr-ext-installed=""><h1>Assignment 3 - JMS</h1>
+<p>Implement an online trading application.
+Each running instance communicates with other running instances and
+also with the bank.</p>
+<p>The assignment describes a message-based communication protocol that
+implements a simple trading system.
+Understanding the assignment requires no special knowledge.</p>
+<p>Parts of the implementation are provided. Download source code from
+<a href="https://d3s.mff.cuni.cz/files/teaching/nswi080/labs/Files/sources-3.zip">https://d3s.mff.cuni.cz/files/teaching/nswi080/labs/Files/sources-3.zip</a></p>
+<h2>Prerequisites</h2>
+<p>The chosen messaging standard is JMS (Java Message Service), using the
+ActiveMQ 5.16 or ActiveMQ Artemis 2.17 implementation.
+The following knowledge is needed for the implementation:</p>
+<ul>
+<li>Basic classes and methods provided by the JMS specification, and their application
+(creating objects of type <code>Connection</code>, <code>Session</code>, <code>Queue</code>, <code>Topic</code> etc.).</li>
+<li>The method of implementing message producers and consumers
+(<code>MessageProducer</code> and <code>MessageConsumer</code> objects).</li>
+<li>The method of creating and parsing messages of different types
+(<code>TextMessage</code>, <code>ObjectMessage</code>, <code>MapMessage</code> etc.),
+knowledge of criteria for choosing an appropriate message type.</li>
+<li>Executing the JMS infrastructure (service provider).</li>
+</ul>
+<h2>Your task</h2>
+<p>Application must provide the following functionality:</p>
+<ol>
+<li>
+<p>After its startup, create random unique names of goods,
+that the user (seller) provides, together with random price of each
+item.
+This list should be sent as a message via the <code>Offers</code> topic to the
+other running instances.</p>
+<p>The application should also send the Bank a message requesting
+account creation.
+The bank will respond with a message containing the account number.</p>
+</li>
+<li>
+<p>Present to the users (in any trivial form) a list of goods and
+prices, offered by the other running instances. This list should be
+updated, whenever a new message from the <code>Offers</code> topic arrives, and
+any items no longer offered by the sending instance should be removed
+from the list.</p>
+</li>
+<li>
+<p>Allow the user to choose (again, using any trivial method)
+goods to buy from another instance. The sale is realized as follows:</p>
+<ul>
+<li>
+<p>The buyer sends a message to the seller, containing
+the name of the requested item and the buyer's
+account number.</p>
+</li>
+<li>
+<p>The seller sends a message to the buyer, containing
+the seller's account number, or indicating a refusal
+to sell (the item was already sold etc.).</p>
+</li>
+<li>
+<p>The buyer sends a message to the Bank, requesting
+transfer of appropriate amount of money from the buyer's account to
+the seller's account.</p>
+</li>
+<li>
+<p>The bank sends a message to the seller, notifying the seller
+of the money transfer from the buyer's account.</p>
+</li>
+<li>
+<p>The seller removes the item from its list and sends a
+message to the buyer, confirming the finished sale.</p>
+</li>
+</ul>
+<p>Note: The buyer does not have to offer the item bought for sale.</p>
+</li>
+<li>
+<p>Consider the weaknesses of the communication protocols described
+above.
+Extend, document and implement a more robust variant of the protocol
+(reusing the provided parts is allowed) that will have these features:</p>
+<ul>
+<li>
+<p><strong>Keep proper account balances.</strong> For simplicity, newly created
+accounts can have fixed balance.</p>
+</li>
+<li>
+<p><strong>Support for account balance queries.</strong> Add a new user command to the
+client, to show the current balance.</p>
+</li>
+<li>
+<p><strong>More robust sell/buy protocol:</strong></p>
+<ul>
+<li>Consider the buyer's account balance.
+Refuse transfer if sender has not enough money.</li>
+<li>Considering that the buyer may transfer less money than the actual price of the
+required item (assume the price is fixed).</li>
+</ul>
+</li>
+<li>
+<p><strong>Improve availability of the goods offered</strong> by existing clients to newly connected clients.
+After a new client connects, it should see offers of all other clients without any user action on those clients.</p>
+</li>
+</ul>
+</li>
+</ol>
+<p>The messages used to implement the functionality may contain further
+information that might be needed but not mentioned above.
+You are to choose the appropriate message types.
+(For example, the provided Bank implementation uses <code>TextMessage</code> and
+<code>MapMessage</code>, you are free to choose different types for the
+communication between the client instances.)</p>
+<p>The implementation should behave reasonably when possible - refuse
+to sell an item already requested by a different buyer, etc.</p>
+<h2>Notes</h2>
+<ul>
+<li>Task: a simple trading system
+<ul>
+<li>Implement a client of a trading system</li>
+<li>Clients must communicate with each other and with the bank we provide</li>
+<li>Clients publish their lists of goods and buy goods from each other on user request</li>
+<li>The payments go through the bank</li>
+</ul>
+</li>
+</ul>
+<h3>Implementation</h3>
+<ul>
+<li>You need two different <code>Session</code> instances
+<ul>
+<li>The first for asynchronous message handling, the second for
+synchronous (user-triggered) messages and waiting for their
+replies</li>
+<li>A session cannot be used for both synchronous and asynchronous
+waiting</li>
+<li><code>MessageProducer</code> from one <code>Session</code> should not be used in a
+different session</li>
+<li>We need dedicated <code>MessageProducer</code> for each <code>Session</code></li>
+</ul>
+</li>
+<li>Do not forget synchronization of accesses to shared data
+<ul>
+<li>If multiple threads can access the same object and at least one thread can modify it, then locking is required</li>
+</ul>
+</li>
+</ul>
+<h3>Common problems</h3>
+<ul>
+<li>Problem with recognizing message type
+<ul>
+<li>Use <code>equals()</code> instead of  <code>==</code> for <code>String</code> comparison</li>
+</ul>
+</li>
+</ul>
+<h4>Exceptions at client start-up</h4>
+<ul>
+<li>Probably a message in broker queue</li>
+<li>Solution
+<ol>
+<li>Stop the bank, client and the broker</li>
+<li>Remove directory <code>data</code> and <code>activemq-data</code></li>
+<li>Restart the broker, bank</li>
+</ol>
+</li>
+</ul>
+<h3>Provided parts of the solution</h3>
+<ul>
+<li><code>Bank.java</code>: bank implementation
+<ul>
+<li>Complete, nothing needs to be added (can be studied)</li>
+</ul>
+</li>
+<li><code>Client.java</code>: skeleton of the client
+<ul>
+<li>Many parts already prepared
+<ul>
+<li>JMS initialization, data structures,
+interaction with the user, the whole communication
+with the Bank</li>
+</ul>
+</li>
+<li>What is left to do:
+<ul>
+<li>communication between clients
+<ul>
+<li>Sending and receiving goods offers</li>
+<li>Buying goods (on user's request)</li>
+<li>Selling goods (asynchronous reaction on other clients' requests)</li>
+<li>The place marked as <code>TODO</code> in the code</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+<h3>Basic procedure of goods offers</h3>
+<ul>
+<li>Initialize a suitable channel for transferring offers and create
+a receiver of its messages
+<ul>
+<li>Step 1 in the <code>connect()</code> method</li>
+</ul>
+</li>
+<li>Implement sending offers
+<ul>
+<li>The <code>publishGoodsList()</code> method</li>
+</ul>
+</li>
+<li>Implement receiving offers
+<ul>
+<li>The <code>processOffer()</code> method</li>
+</ul>
+</li>
+</ul>
+<h3>Basic procedure of buying goods</h3>
+<ul>
+<li>Initialize suitable channel for receiving sale requests and create
+a receiver of its messages
+<ul>
+<li>Step 2 in the <code>connect()</code> method</li>
+</ul>
+</li>
+<li>Choose suitable message types for communication between clients
+<ul>
+<li><code>MapMessage</code>? <code>ObjectMessage</code>?</li>
+</ul>
+</li>
+<li>Sending messages requesting a sale
+<ul>
+<li>Step 1 in the <code>buy()</code> method</li>
+</ul>
+</li>
+<li>Receiving messages requesting a sale
+<ul>
+<li>Step 1 in the <code>processSale()</code> method</li>
+</ul>
+</li>
+<li>Reserve the requested item
+<ul>
+<li>Step 2 in the <code>processSale()</code> method</li>
+</ul>
+</li>
+<li>Accept or refuse the sale
+<ul>
+<li>Step 3 in the <code>processSale()</code> method</li>
+</ul>
+</li>
+<li>Receive the reply of the sale request message
+<ul>
+<li>Step 2 in the <code>buy()</code> method</li>
+</ul>
+</li>
+<li>Money transfer request for the Bank
+<ul>
+<li>Step 3 in the <code>buy()</code> method (already implemented)</li>
+</ul>
+</li>
+<li>After receiving the transaction notification from the Bank (implemented),
+send a finished sale confirmation
+<ul>
+<li>Step 3 in the <code>processBankReport()</code> method</li>
+</ul>
+</li>
+<li>Receive the confirmation, notify the user
+<ul>
+<li>Step 4 in the <code>buy()</code> method</li>
+</ul>
+</li>
+</ul>
+<h3>Common mistakes</h3>
+<ul>
+<li>Using a wrong JMS session</li>
+<li>No synchronization</li>
+<li>Inability to buy goods after the previous attempt fails
+<ul>
+<li>When the buyer had not enough money</li>
+<li>Make sure to return the goods to available state</li>
+</ul>
+</li>
+<li>No handling of "exceptional" cases
+<ul>
+<li>For example entering wrong client name or goods name</li>
+</ul>
+</li>
+</ul>
+<h2>Submission</h2>
+<ul>
+<li>By e-mail (deadline is on the web)</li>
+<li>Documentation
+<ul>
+<li><strong>Design</strong> and <strong>reasoning</strong> about the communication
+<strong>protocol</strong> used</li>
+</ul>
+</li>
+<li>The submission shall be easy to start</li>
+<li>Make sure it works in the lab</li>
+<li>Do not send any generated files (but send the build script)</li>
+</ul>
+</body><grammarly-desktop-integration data-grammarly-shadow-root="true"></grammarly-desktop-integration></html>
