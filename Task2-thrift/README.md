@@ -36,3 +36,7 @@ The client and server should communicate like this:
    * The client saves the summary on the server using saveSummary in Reports.
    * The server verifies that the summary is accurate and indicates that by a boolean return value. 
 
+### Implementation
+* [__Server__](Cpp-server) - C++ server
+* [__Client__](Java-client) - Java client
+
